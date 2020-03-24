@@ -144,7 +144,7 @@ class Exchange(ABCExchange):
             if ignore:
                 if ignore(dir_name, file_name, file_size):
                     continue
-     
+
             with open(dest_path, 'wb') as d:
                 d.write(decoded_content)
 
