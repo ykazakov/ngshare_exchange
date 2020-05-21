@@ -6,9 +6,9 @@ import os
 import pytest
 
 from .base import TestExchange
-from ....auth import Authenticator
-from ....exchange.abc import ExchangeError
-from ....exchange.ngshare.fetch_feedback import ExchangeFetchFeedback
+from nbgrader.auth import Authenticator
+from nbgrader.exchange import ExchangeError
+from .. import ExchangeFetchFeedback
 
 
 class TestExchangeFetchFeedback(TestExchange):

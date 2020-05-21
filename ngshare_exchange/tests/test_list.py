@@ -13,9 +13,9 @@ from requests import PreparedRequest
 from textwrap import dedent
 
 from .base import parse_body, TestExchange
-from ....auth import Authenticator
-from ....exchange.abc.exchange import ExchangeError
-from ....exchange.ngshare import ExchangeList
+from nbgrader.auth import Authenticator
+from nbgrader.exchange import ExchangeError
+from .. import ExchangeList
 
 
 class TestExchangeList(TestExchange):

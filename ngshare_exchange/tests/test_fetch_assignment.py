@@ -6,9 +6,9 @@ import shutil
 import pytest
 
 from .base import TestExchange
-from ....auth import Authenticator
-from ....exchange.abc import ExchangeError
-from ....exchange.ngshare.fetch_assignment import ExchangeFetchAssignment
+from nbgrader.auth import Authenticator
+from nbgrader.exchange import ExchangeError
+from .. import ExchangeFetchAssignment
 
 
 class TestExchangeFetchAssignment(TestExchange):

@@ -12,12 +12,12 @@ from requests import PreparedRequest
 import requests_mock as rq_mock
 
 from .base import parse_body, TestExchange
-from ....exchange.abc.exchange import ExchangeError
-from ....exchange.ngshare import ExchangeSubmit
+from nbgrader.exchange import ExchangeError
+from .. import ExchangeSubmit
 
 
 def get_files_path() -> Path:
-    return Path(__file__).parent.parent / 'files'
+    return Path(__file__).parent / 'files'
 
 
 class TestExchangeSubmit(TestExchange):

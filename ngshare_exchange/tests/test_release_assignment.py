@@ -9,9 +9,8 @@ import pytest
 from requests import PreparedRequest
 
 from .base import parse_body, TestExchange
-from ....exchange.abc.exchange import ExchangeError
-from ....exchange.ngshare.release_assignment import \
-    ExchangeReleaseAssignment
+from nbgrader.exchange import ExchangeError
+from .. import ExchangeReleaseAssignment
 
 
 class TestExchangeReleaseAssignment(TestExchange):
@@ -101,7 +100,7 @@ class TestExchangeReleaseAssignment(TestExchange):
 
     def _prepare_assignment(self):
         assignment_dir = self.course_dir / 'release' / self.assignment_id
-        files_dir = Path(__file__).parent.parent / 'files'
+        files_dir = Path(__file__).parent / 'files'
         os.makedirs(assignment_dir)
         shutil.copyfile(files_dir / 'test.ipynb',
                         assignment_dir / (self.notebook_id + '.ipynb'))

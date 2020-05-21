@@ -4,7 +4,7 @@ import shutil
 import glob
 
 from nbgrader.exchange.abc import ExchangeFetchFeedback as ABCExchangeFetchFeedback
-from nbgrader.exchange.ngshare import Exchange
+from .exchange import Exchange
 
 from nbgrader.utils import check_mode, notebook_hash, make_unique_key, \
     get_username

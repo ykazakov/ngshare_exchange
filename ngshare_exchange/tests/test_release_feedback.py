@@ -9,8 +9,8 @@ import pytest
 from requests import PreparedRequest
 
 from .base import parse_body, TestExchange
-from ....exchange.abc.exchange import ExchangeError
-from ....exchange.ngshare.release_feedback import ExchangeReleaseFeedback
+from nbgrader.exchange import ExchangeError
+from .. import ExchangeReleaseFeedback
 
 
 class TestExchangeReleaseFeedback(TestExchange):
@@ -61,7 +61,7 @@ class TestExchangeReleaseFeedback(TestExchange):
     def _prepare_feedback(self):
         feedback_dir = self.course_dir / 'feedback' / self.student_id \
             / self.assignment_id
-        files_dir = Path(__file__).parent.parent / 'files'
+        files_dir = Path(__file__).parent / 'files'
         os.makedirs(feedback_dir)
         shutil.copyfile(files_dir / 'feedback.html', feedback_dir
                         / (self.notebook_id + '.html'))
@@ -71,7 +71,7 @@ class TestExchangeReleaseFeedback(TestExchange):
     def _prepare_feedback_2(self):
         feedback_dir = self.course_dir / 'feedback' / self.student_id \
             / self.assignment_id
-        files_dir = Path(__file__).parent.parent / 'files'
+        files_dir = Path(__file__).parent / 'files'
         shutil.copyfile(files_dir / 'feedback-changed.html',
                         feedback_dir / (self.notebook_id + '.html'))
         with open(feedback_dir / 'timestamp.txt', 'w') as f:

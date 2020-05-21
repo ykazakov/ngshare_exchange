@@ -5,9 +5,9 @@ import pytest
 from requests import PreparedRequest
 
 from .base import parse_body, TestExchange
-from ....exchange.abc.exchange import ExchangeError
-from ....exchange.ngshare import ExchangeCollect
-from ....utils import parse_utc
+from nbgrader.exchange import ExchangeError
+from .. import ExchangeCollect
+from nbgrader.utils import parse_utc
 
 
 class TestExchangeCollect(TestExchange):

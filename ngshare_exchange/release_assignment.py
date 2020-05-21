@@ -7,7 +7,7 @@ from stat import S_IRUSR, S_IWUSR, S_IXUSR, S_IRGRP, S_IWGRP, S_IXGRP, \
 from traitlets import Bool
 
 from nbgrader.exchange.abc import ExchangeReleaseAssignment as ABCExchangeReleaseAssignment
-from nbgrader.exchange.ngshare import Exchange
+from .exchange import Exchange
 
 
 class ExchangeReleaseAssignment(Exchange, ABCExchangeReleaseAssignment):

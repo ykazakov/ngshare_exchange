@@ -8,7 +8,7 @@ import requests_mock as rq_mock
 from requests_mock import Mocker
 
 from nbgrader.coursedir import CourseDirectory
-from nbgrader.exchange.ngshare.exchange import Exchange
+from .. import Exchange
 
 
 def parse_body(body: str):
@@ -49,7 +49,7 @@ class TestExchange():
 
     @property
     def files_path(self) -> Path:
-        return Path(__file__).parent.parent / 'files'
+        return Path(__file__).parent / 'files'
 
     @pytest.fixture(autouse=True)
     def init(self, requests_mock: Mocker, tmpdir_factory):
