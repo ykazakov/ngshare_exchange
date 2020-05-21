@@ -8,7 +8,7 @@ from .fetch import ExchangeFetch
 from .fetch_assignment import ExchangeFetchAssignment
 from .collect import ExchangeCollect
 from .list import ExchangeList
-from .__version__ import __version__
+from .version import __version__
 from .configure_exchange import configureExchange
 
 __all__ = [
