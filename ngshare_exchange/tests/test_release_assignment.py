@@ -35,8 +35,9 @@ class TestExchangeReleaseAssignment(TestExchange):
         response = {'success': True, 'assignments': []}
         self.requests_mocker.get(url, json=response)
 
-        url = '{}/assignment/{}/{}'.format(self.base_url, self.course_id,
-                                           self.assignment_id)
+        url = '{}/assignment/{}/{}'.format(
+            self.base_url, self.course_id, self.assignment_id
+        )
         self.requests_mocker.post(url, json=self._post_assignment)
 
     def _mock_requests_released(self):
@@ -48,8 +49,9 @@ class TestExchangeReleaseAssignment(TestExchange):
         response = {'success': True, 'assignments': [self.assignment_id]}
         self.requests_mocker.get(url, json=response)
 
-        url = '{}/assignment/{}/{}'.format(self.base_url, self.course_id,
-                                           self.assignment_id)
+        url = '{}/assignment/{}/{}'.format(
+            self.base_url, self.course_id, self.assignment_id
+        )
         response = {'success': False, 'message': 'Assignment already exists'}
         self.requests_mocker.post(url, json=response)
 
@@ -64,19 +66,25 @@ class TestExchangeReleaseAssignment(TestExchange):
         url = '{}/assignments/{}'.format(self.base_url, self.course_id)
         self.requests_mocker.get(url, json=self._get_assignments)
 
-        url = '{}/assignment/{}/{}'.format(self.base_url, self.course_id,
-                                           self.assignment_id)
+        url = '{}/assignment/{}/{}'.format(
+            self.base_url, self.course_id, self.assignment_id
+        )
         self.requests_mocker.post(url, json=self._post_assignment)
 
-        url = '{}/assignment/{}/{}'.format(self.base_url, self.course_id,
-                                           self.assignment_id)
+        url = '{}/assignment/{}/{}'.format(
+            self.base_url, self.course_id, self.assignment_id
+        )
         self.requests_mocker.delete(url, json=self._delete_assignment)
 
-    def _new_release_assignment(self, course_id=TestExchange.course_id,
-                                assignment_id=TestExchange.assignment_id,
-                                student_id=TestExchange.student_id):
-        return self._new_exchange_object(ExchangeReleaseAssignment, course_id,
-                                         assignment_id, student_id)
+    def _new_release_assignment(
+        self,
+        course_id=TestExchange.course_id,
+        assignment_id=TestExchange.assignment_id,
+        student_id=TestExchange.student_id,
+    ):
+        return self._new_exchange_object(
+            ExchangeReleaseAssignment, course_id, assignment_id, student_id
+        )
 
     def _post_assignment(self, request: PreparedRequest, context):
         if self.released:
@@ -102,8 +110,10 @@ class TestExchangeReleaseAssignment(TestExchange):
         assignment_dir = self.course_dir / 'release' / self.assignment_id
         files_dir = Path(__file__).parent / 'files'
         os.makedirs(assignment_dir)
-        shutil.copyfile(files_dir / 'test.ipynb',
-                        assignment_dir / (self.notebook_id + '.ipynb'))
+        shutil.copyfile(
+            files_dir / 'test.ipynb',
+            assignment_dir / (self.notebook_id + '.ipynb'),
+        )
 
     @pytest.fixture(autouse=True)
     def init_release_assignment(self):

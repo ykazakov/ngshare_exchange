@@ -28,8 +28,9 @@ class TestExchangeSubmit(TestExchange):
         Mocks ngshare's GET assignment with list_only, which responds with the
         assignment.
         '''
-        url = '{}/assignment/{}/{}'.format(self.base_url, self.course_id,
-                                           self.assignment_id)
+        url = '{}/assignment/{}/{}'.format(
+            self.base_url, self.course_id, self.assignment_id
+        )
         pattern = re.compile(r'^{}\?.*list_only=true'.format(url))
         content = None
         with open(self.files_path / 'test.ipynb', 'rb') as notebook:
@@ -43,8 +44,9 @@ class TestExchangeSubmit(TestExchange):
 
     def _mock_requests_submit(self, extra=False):
         ''' Mock's ngshare's POST submission, which verifies the request. '''
-        url = '{}/submission/{}/{}'.format(self.base_url, self.course_id,
-                                           self.assignment_id)
+        url = '{}/submission/{}/{}'.format(
+            self.base_url, self.course_id, self.assignment_id
+        )
         if extra:
             self.requests_mocker.post(url, json=self._post_submission_extra)
         else:
@@ -57,8 +59,9 @@ class TestExchangeSubmit(TestExchange):
         Mocks ngshare's POST submission, which verifies the request for the
         second course.
         '''
-        url = '{}/submission/{}/{}'.format(self.base_url, self.course_id2,
-                                           self.assignment_id)
+        url = '{}/submission/{}/{}'.format(
+            self.base_url, self.course_id2, self.assignment_id
+        )
         self.requests_mocker.post(url, json=self._post_submission)
 
         self._mock_request_assignment()
@@ -68,17 +71,22 @@ class TestExchangeSubmit(TestExchange):
         Mocks ngshare's POST submission, which verifies the request has all and
         only the files which are within the file size limit.
         '''
-        url = '{}/submission/{}/{}'.format(self.base_url, self.course_id,
-                                           self.assignment_id)
+        url = '{}/submission/{}/{}'.format(
+            self.base_url, self.course_id, self.assignment_id
+        )
         self.requests_mocker.post(url, json=self._post_submission_size)
 
         self._mock_request_assignment()
 
-    def _new_submit(self, course_id=TestExchange.course_id,
-                    assignment_id=TestExchange.assignment_id,
-                    student_id=TestExchange.student_id):
-        return self._new_exchange_object(ExchangeSubmit, course_id,
-                                         assignment_id, student_id)
+    def _new_submit(
+        self,
+        course_id=TestExchange.course_id,
+        assignment_id=TestExchange.assignment_id,
+        student_id=TestExchange.student_id,
+    ):
+        return self._new_exchange_object(
+            ExchangeSubmit, course_id, assignment_id, student_id
+        )
 
     def _post_submission(self, request: PreparedRequest, context):
         request = parse_body(request.body)
@@ -110,8 +118,10 @@ class TestExchangeSubmit(TestExchange):
             with open(reference_file, 'rb') as reference_file:
                 expected_content = reference_file.read()
             for file_entry in files:
-                assert (file_entry['path'] == notebook_name1 or
-                        file_entry['path'] == notebook_name2)
+                assert (
+                    file_entry['path'] == notebook_name1
+                    or file_entry['path'] == notebook_name2
+                )
                 actual_content = base64.b64decode(files[0]['content'].encode())
                 assert actual_content == expected_content
         except Exception as e:
@@ -133,14 +143,19 @@ class TestExchangeSubmit(TestExchange):
         self.test_completed = True
         return {'success': True, 'timestamp': self.timestamp}
 
-    def _prepare_submission(self, course_dir,
-                            assignment_id=TestExchange.assignment_id,
-                            notebook_id=TestExchange.notebook_id):
+    def _prepare_submission(
+        self,
+        course_dir,
+        assignment_id=TestExchange.assignment_id,
+        notebook_id=TestExchange.notebook_id,
+    ):
         course_dir = Path(course_dir).absolute()
         assignment_dir = course_dir / assignment_id
         os.makedirs(assignment_dir)
-        shutil.copyfile(self.files_path / 'test.ipynb',
-                        assignment_dir / (notebook_id + '.ipynb'))
+        shutil.copyfile(
+            self.files_path / 'test.ipynb',
+            assignment_dir / (notebook_id + '.ipynb'),
+        )
 
     @pytest.fixture(autouse=True)
     def init_submit(self):
@@ -176,18 +191,28 @@ class TestExchangeSubmit(TestExchange):
         assert self.test_completed
 
         # Verify cache.
-        cache_filename, = os.listdir(self.cache_dir / self.course_id)
-        cache_username, cache_assignment, cache_timestamp1 = cache_filename\
-            .split("+")[:3]
+        (cache_filename,) = os.listdir(self.cache_dir / self.course_id)
+        (
+            cache_username,
+            cache_assignment,
+            cache_timestamp1,
+        ) = cache_filename.split("+")[:3]
         assert cache_username == self.student_id
         assert cache_assignment == self.assignment_id
         assert cache_timestamp1 == self.timestamp
-        assert Path(self.cache_dir / self.course_id / cache_filename
-                    / (self.notebook_id + '.ipynb')).is_file()
-        assert Path(self.cache_dir / self.course_id / cache_filename /
-                    'timestamp.txt').is_file()
-        with open(self.cache_dir / self.course_id / cache_filename
-                  / 'timestamp.txt', 'r') as fh:
+        assert Path(
+            self.cache_dir
+            / self.course_id
+            / cache_filename
+            / (self.notebook_id + '.ipynb')
+        ).is_file()
+        assert Path(
+            self.cache_dir / self.course_id / cache_filename / 'timestamp.txt'
+        ).is_file()
+        with open(
+            self.cache_dir / self.course_id / cache_filename / 'timestamp.txt',
+            'r',
+        ) as fh:
             assert fh.read() == cache_timestamp1
 
         # Submit again.
@@ -201,25 +226,39 @@ class TestExchangeSubmit(TestExchange):
         # Verify cache.
         assert len(os.listdir(self.cache_dir / self.course_id)) == 2
         cache_filename = sorted(os.listdir(self.cache_dir / self.course_id))[1]
-        cache_username, cache_assignment, cache_timestamp2 = cache_filename\
-            .split("+")[:3]
+        (
+            cache_username,
+            cache_assignment,
+            cache_timestamp2,
+        ) = cache_filename.split("+")[:3]
         assert cache_username == self.student_id
         assert cache_assignment == self.assignment_id
         assert cache_timestamp2 == self.timestamp
-        assert Path(self.cache_dir / self.course_id / cache_filename
-                    / (self.notebook_id + '.ipynb')).is_file()
-        assert Path(self.cache_dir / self.course_id / cache_filename /
-                    'timestamp.txt').is_file()
-        with open(self.cache_dir / self.course_id / cache_filename
-                  / 'timestamp.txt', 'r') as fh:
+        assert Path(
+            self.cache_dir
+            / self.course_id
+            / cache_filename
+            / (self.notebook_id + '.ipynb')
+        ).is_file()
+        assert Path(
+            self.cache_dir / self.course_id / cache_filename / 'timestamp.txt'
+        ).is_file()
+        with open(
+            self.cache_dir / self.course_id / cache_filename / 'timestamp.txt',
+            'r',
+        ) as fh:
             assert fh.read() == cache_timestamp2
 
     def test_submit_extra(self):
         # Add extra notebook.
         self._mock_requests_submit(extra=True)
         self.notebook_id2 = 'p2'
-        shutil.copyfile(get_files_path() / 'test.ipynb', self.course_dir /
-                        self.assignment_id / (self.notebook_id2 + '.ipynb'))
+        shutil.copyfile(
+            get_files_path() / 'test.ipynb',
+            self.course_dir
+            / self.assignment_id
+            / (self.notebook_id2 + '.ipynb'),
+        )
         self.submit.start()
         assert not self.test_failed
         assert self.test_completed
@@ -228,8 +267,12 @@ class TestExchangeSubmit(TestExchange):
         # Add extra notebook and enable strict flag.
         self._mock_requests_submit(extra=True)
         self.notebook_id2 = 'p2'
-        shutil.copyfile(get_files_path() / 'test.ipynb', self.course_dir /
-                        self.assignment_id / (self.notebook_id2 + '.ipynb'))
+        shutil.copyfile(
+            get_files_path() / 'test.ipynb',
+            self.course_dir
+            / self.assignment_id
+            / (self.notebook_id2 + '.ipynb'),
+        )
         self.submit.strict = True
         self.submit.start()
         assert not self.test_failed
@@ -239,18 +282,28 @@ class TestExchangeSubmit(TestExchange):
         # Missing notebook.
         self._mock_requests_submit()
         self.notebook_id2 = 'p2'
-        shutil.move(self.course_dir / self.assignment_id
-                    / (self.notebook_id + '.ipynb'), self.course_dir
-                    / self.assignment_id / (self.notebook_id2 + '.ipynb'))
+        shutil.move(
+            self.course_dir
+            / self.assignment_id
+            / (self.notebook_id + '.ipynb'),
+            self.course_dir
+            / self.assignment_id
+            / (self.notebook_id2 + '.ipynb'),
+        )
         self.submit.start()
 
     def test_submit_missing_strict(self):
         # Missing notebook and enable strict flag.
         self._mock_requests_submit()
         self.notebook_id2 = 'p2'
-        shutil.move(self.course_dir / self.assignment_id
-                    / (self.notebook_id + '.ipynb'), self.course_dir
-                    / self.assignment_id / (self.notebook_id2 + '.ipynb'))
+        shutil.move(
+            self.course_dir
+            / self.assignment_id
+            / (self.notebook_id + '.ipynb'),
+            self.course_dir
+            / self.assignment_id
+            / (self.notebook_id2 + '.ipynb'),
+        )
         self.submit.strict = True
         with pytest.raises(ExchangeError):
             self.submit.start()
@@ -269,8 +322,9 @@ class TestExchangeSubmit(TestExchange):
         assert not Path(self.cache_dir / self.course_id2).exists()
 
         # Submit to second course.
-        self.requests_mocker.register_uri(rq_mock.ANY, rq_mock.ANY,
-                                          text=self._mock_all)
+        self.requests_mocker.register_uri(
+            rq_mock.ANY, rq_mock.ANY, text=self._mock_all
+        )
         self._mock_requests_submit_2()
         self.course_dir = course_dir2
         self.submit = self._new_submit(course_id=self.course_id2)
@@ -301,8 +355,8 @@ class TestExchangeSubmit(TestExchange):
     def test_submit_file_size(self):
         # Create two files around a 2 KB size limit.
         self._mock_requests_submit_size()
-        small_file = (self.course_dir / self.assignment_id / 'small_file')
-        big_file = (self.course_dir / self.assignment_id / 'big_file')
+        small_file = self.course_dir / self.assignment_id / 'small_file'
+        big_file = self.course_dir / self.assignment_id / 'big_file'
         small_file.touch()
         big_file.touch()
         with open(small_file, 'w') as small, open(big_file, 'w') as big:

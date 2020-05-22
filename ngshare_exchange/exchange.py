@@ -19,7 +19,11 @@ import json
 
 class Exchange(ABCExchange):
 
-    username = os.environ['JUPYTERHUB_USER'] if 'JUPYTERHUB_USER' in os.environ else os.environ['USER']
+    username = (
+        os.environ['JUPYTERHUB_USER']
+        if 'JUPYTERHUB_USER' in os.environ
+        else os.environ['USER']
+    )
 
     @property
     def ngshare_url(self):
@@ -34,19 +38,32 @@ class Exchange(ABCExchange):
 
     def _ngshare_api_check_error(self, response, url):
         if response.status_code != requests.codes.ok:
-            self.log.error("ngshare service returned invalid status code %d.", response.status_code)
+            self.log.error(
+                "ngshare service returned invalid status code %d.",
+                response.status_code,
+            )
 
         try:
             response = response.json()
         except Exception:
-            self.log.exception("ngshare service returned non-JSON content: '%s'.", response.text)
+            self.log.exception(
+                "ngshare service returned non-JSON content: '%s'.",
+                response.text,
+            )
             return None
 
         if not response['success']:
             if 'message' not in response:
-                self.log.error("ngshare endpoint %s returned failure without an error message.", url)
+                self.log.error(
+                    "ngshare endpoint %s returned failure without an error message.",
+                    url,
+                )
             else:
-                self.log.error("ngshare endpoint %s returned failure: %s", url, response['message'])
+                self.log.error(
+                    "ngshare endpoint %s returned failure: %s",
+                    url,
+                    response['message'],
+                )
             return None
         return response
 
@@ -54,14 +71,22 @@ class Exchange(ABCExchange):
         try:
             headers = None
             if 'JUPYTERHUB_API_TOKEN' in os.environ:
-                headers = {'Authorization': 'token '
-                           + os.environ['JUPYTERHUB_API_TOKEN']}
-            response = requests.request(method, self.ngshare_url + url,
-                                        headers=headers, data=data,
-                                        params=params)
+                headers = {
+                    'Authorization': 'token '
+                    + os.environ['JUPYTERHUB_API_TOKEN']
+                }
+            response = requests.request(
+                method,
+                self.ngshare_url + url,
+                headers=headers,
+                data=data,
+                params=params,
+            )
         except Exception:
-            self.log.exception('An error occurred when querying the ngshare '
-                               'endpoint %s', url)
+            self.log.exception(
+                'An error occurred when querying the ngshare ' 'endpoint %s',
+                url,
+            )
             return None
         return self._ngshare_api_check_error(response, url)
 
@@ -74,27 +99,36 @@ class Exchange(ABCExchange):
     def ngshare_api_delete(self, url, params=None):
         return self.ngshare_api_request('DELETE', url, params=params)
 
-    assignment_dir = Unicode('.',
-                             help=dedent("""
+    assignment_dir = Unicode(
+        '.',
+        help=dedent(
+            """
             Local path for storing student assignments.  Defaults to '.'
             which is normally Jupyter's notebook_dir.
-            """)).tag(config=True)
+            """
+        ),
+    ).tag(config=True)
 
-    cache = Unicode('',
-                    help='Local cache directory for nbgrader submit and nbgrader list. Defaults to $JUPYTER_DATA_DIR/nbgrader_cache'
-                    ).tag(config=True)
+    cache = Unicode(
+        '',
+        help='Local cache directory for nbgrader submit and nbgrader list. Defaults to $JUPYTER_DATA_DIR/nbgrader_cache',
+    ).tag(config=True)
 
     @default('cache')
     def _cache_default(self):
         return os.path.join(jupyter_data_dir(), 'nbgrader_cache')
 
-    path_includes_course = Bool(False,
-                                help=dedent("""
+    path_includes_course = Bool(
+        False,
+        help=dedent(
+            """
             Whether the path for fetching/submitting  assignments should be
             prefixed with the course name. If this is `False`, then the path
             will be something like `./ps1`. If this is `True`, then the path
             will be something like `./course123/ps1`.
-            """)).tag(config=True)
+            """
+        ),
+    ).tag(config=True)
 
     def decode_dir(self, src_dir, dest_dir, ignore=None):
         '''
@@ -143,7 +177,7 @@ class Exchange(ABCExchange):
                 if ignore:
                     if ignore(subdir, file_name, len(data_bytes)):
                         continue
-                
+
                 # check if you have a subdir
                 sub_dir = subdir.split(os.sep)[-1]
                 if sub_dir != self.coursedir.assignment_id:
@@ -190,8 +224,8 @@ class Exchange(ABCExchange):
             # time nbgrader is run.
 
             from fuzzywuzzy import fuzz
-            scores = sorted([(fuzz.ratio(self.src_path, x), x) for x in
-                            found])
+
+            scores = sorted([(fuzz.ratio(self.src_path, x), x) for x in found])
             self.log.error('Did you mean: %s', scores[-1][1])
 
         raise ExchangeError(msg)
@@ -203,11 +237,16 @@ class Exchange(ABCExchange):
         specified by the options coursedir.ignore, coursedir.include
         and coursedir.max_file_size.
         """
-        shutil.copytree(src, dest,
-                        ignore=ignore_patterns(exclude=self.coursedir.ignore,
-                                               include=self.coursedir.include,
-                                               max_file_size=self.coursedir.max_file_size,
-                                               log=self.log))
+        shutil.copytree(
+            src,
+            dest,
+            ignore=ignore_patterns(
+                exclude=self.coursedir.ignore,
+                include=self.coursedir.include,
+                max_file_size=self.coursedir.max_file_size,
+                log=self.log,
+            ),
+        )
         # copytree copies access mode too - so we must add go+rw back to it if
         # we are in groupshared.
         if self.coursedir.groupshared:
@@ -218,7 +257,10 @@ class Exchange(ABCExchange):
                     try:
                         os.chmod(dirname, (st_mode | 0o2770) & 0o2777)
                     except PermissionError:
-                        self.log.warning("Could not update permissions of %s to make it groupshared", dirname)
+                        self.log.warning(
+                            "Could not update permissions of %s to make it groupshared",
+                            dirname,
+                        )
 
                 for filename in filenames:
                     filename = os.path.join(dirname, filename)
@@ -227,7 +269,10 @@ class Exchange(ABCExchange):
                         try:
                             os.chmod(filename, (st_mode | 0o660) & 0o777)
                         except PermissionError:
-                            self.log.warning("Could not update permissions of %s to make it groupshared", filename)
+                            self.log.warning(
+                                "Could not update permissions of %s to make it groupshared",
+                                filename,
+                            )
 
     def ignore_patterns(self):
         """
@@ -248,24 +293,31 @@ class Exchange(ABCExchange):
 
         def ignore_patterns(directory, filename, filesize):
             fullname = os.path.join(directory, filename)
-            if exclude and any(fnmatch.fnmatch(filename, glob) for glob in
-                               exclude):
+            if exclude and any(
+                fnmatch.fnmatch(filename, glob) for glob in exclude
+            ):
                 if log:
-                    log.debug("Ignoring excluded file '{}' (see config option "
-                              'CourseDirectory.ignore)'.format(fullname))
+                    log.debug(
+                        "Ignoring excluded file '{}' (see config option "
+                        'CourseDirectory.ignore)'.format(fullname)
+                    )
                 return True
-            elif include and not any(fnmatch.fnmatch(filename, glob) for glob
-                                     in include):
+            elif include and not any(
+                fnmatch.fnmatch(filename, glob) for glob in include
+            ):
                 if log:
-                    log.debug("Ignoring non included file '{}' (see config "
-                              'option CourseDirectory.include)'
-                              .format(fullname))
+                    log.debug(
+                        "Ignoring non included file '{}' (see config "
+                        'option CourseDirectory.include)'.format(fullname)
+                    )
                 return True
             elif max_file_size and filesize > 1000 * max_file_size:
                 if log:
-                    log.warning("Ignoring file too large '{}' (see config "
-                                'option CourseDirectory.max_file_size)'
-                                .format(fullname))
+                    log.warning(
+                        "Ignoring file too large '{}' (see config "
+                        'option CourseDirectory.max_file_size)'.format(fullname)
+                    )
                 return True
             return False
+
         return ignore_patterns

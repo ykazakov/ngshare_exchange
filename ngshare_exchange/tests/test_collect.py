@@ -18,8 +18,9 @@ class TestExchangeCollect(TestExchange):
             if 'timestamp' in request:
                 timestamp = request['timestamp']
             else:
-                timestamp = str(2000 + self.num_submissions)\
-                    + self.timestamp_template
+                timestamp = (
+                    str(2000 + self.num_submissions) + self.timestamp_template
+                )
             time = parse_utc(timestamp)
             assert time.year > 2000 and time.year < 2001 + self.num_submissions
             assert timestamp == str(time.year) + self.timestamp_template
@@ -33,8 +34,9 @@ class TestExchangeCollect(TestExchange):
         submissions = []
         for i in range(self.num_submissions):
             timestamp = str(2001 + i) + self.timestamp_template
-            submissions.append({'student_id': self.student_id,
-                                'timestamp': timestamp})
+            submissions.append(
+                {'student_id': self.student_id, 'timestamp': timestamp}
+            )
         return {'success': True, 'submissions': submissions}
 
     def _mock_requests_collect(self):
@@ -42,13 +44,14 @@ class TestExchangeCollect(TestExchange):
         Mock's ngshare's GET submissions, which responds with the submissions,
         and GET submission, which responds with the submission.
         """
-        url = '{}/submissions/{}/{}'.format(self.base_url, self.course_id,
-                                            self.assignment_id)
+        url = '{}/submissions/{}/{}'.format(
+            self.base_url, self.course_id, self.assignment_id
+        )
         self.requests_mocker.get(url, json=self._get_submissions)
 
-        url = '{}/submission/{}/{}/{}'.format(self.base_url, self.course_id,
-                                              self.assignment_id,
-                                              self.student_id)
+        url = '{}/submission/{}/{}/{}'.format(
+            self.base_url, self.course_id, self.assignment_id, self.student_id
+        )
         self.requests_mocker.get(url, json=self._get_submission)
 
     def _mock_requests_subdir(self, subdirectory, subdirectory_file):
@@ -57,29 +60,36 @@ class TestExchangeCollect(TestExchange):
         and GET submission, which responds with the submission with a
         subdirectory.
         """
-        url = '{}/submissions/{}/{}'.format(self.base_url, self.course_id,
-                                            self.assignment_id)
+        url = '{}/submissions/{}/{}'.format(
+            self.base_url, self.course_id, self.assignment_id
+        )
         timestamp = '2000' + self.timestamp_template
         submissions = [{'student_id': self.student_id, 'timestamp': timestamp}]
         response = {'success': True, 'submissions': submissions}
         self.requests_mocker.get(url, json=response)
 
-        url = '{}/submission/{}/{}/{}'.format(self.base_url, self.course_id,
-                                              self.assignment_id,
-                                              self.student_id)
+        url = '{}/submission/{}/{}/{}'.format(
+            self.base_url, self.course_id, self.assignment_id, self.student_id
+        )
         content1 = base64.b64encode(self._notebook_content()).decode()
         content2 = base64.b64encode(''.encode()).decode()
         path2 = '{}/{}'.format(subdirectory, subdirectory_file)
-        files = [{'path': self.notebook_id + '.ipynb', 'content': content1},
-                 {'path': path2, 'content': content2}]
+        files = [
+            {'path': self.notebook_id + '.ipynb', 'content': content1},
+            {'path': path2, 'content': content2},
+        ]
         response = {'success': True, 'timestamp': timestamp, 'files': files}
         self.requests_mocker.get(url, json=response)
 
-    def _new_collect(self, course_id=TestExchange.course_id,
-                     assignment_id=TestExchange.assignment_id,
-                     student_id=TestExchange.student_id):
-        return self._new_exchange_object(ExchangeCollect, course_id,
-                                         assignment_id, student_id)
+    def _new_collect(
+        self,
+        course_id=TestExchange.course_id,
+        assignment_id=TestExchange.assignment_id,
+        student_id=TestExchange.student_id,
+    ):
+        return self._new_exchange_object(
+            ExchangeCollect, course_id, assignment_id, student_id
+        )
 
     def _notebook_content(self):
         reference_file = self.files_path / 'test.ipynb'
@@ -92,8 +102,9 @@ class TestExchangeCollect(TestExchange):
         os.chdir(self.course_dir)
 
     def submission_dir(self):
-        return (self.course_dir / 'submitted' / self.student_id
-                / self.assignment_id)
+        return (
+            self.course_dir / 'submitted' / self.student_id / self.assignment_id
+        )
 
     @property
     def timestamp_template(self):
@@ -133,8 +144,9 @@ class TestExchangeCollect(TestExchange):
         timestamp_path = self.submission_dir() / 'timestamp.txt'
         assert notebook.is_file()
         assert timestamp_path.is_file()
-        with open(notebook, 'rb') as notebook_file, open(timestamp_path, 'r')\
-                as timestamp_file:
+        with open(notebook, 'rb') as notebook_file, open(
+            timestamp_path, 'r'
+        ) as timestamp_file:
             assert notebook_file.read() == self._notebook_content()
             assert timestamp_file.read() == '2001' + self.timestamp_template
 
@@ -174,5 +186,11 @@ class TestExchangeCollect(TestExchange):
         self.num_submissions = 1
         self._mock_requests_subdir(subdir, subfile)
         self.collect.start()
-        assert (self.course_dir / 'submitted' / self.student_id
-                / self.assignment_id / subdir / subfile).is_file()
+        assert (
+            self.course_dir
+            / 'submitted'
+            / self.student_id
+            / self.assignment_id
+            / subdir
+            / subfile
+        ).is_file()

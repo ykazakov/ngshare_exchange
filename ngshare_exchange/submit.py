@@ -8,7 +8,6 @@ from nbgrader.utils import find_all_notebooks, parse_utc
 
 
 class ExchangeSubmit(Exchange, ABCExchangeSubmit):
-
     def _get_assignment_notebooks(self, course_id, assignment_id):
         """
         Returns a list of relative paths for all files in the assignment.
@@ -20,12 +19,17 @@ class ExchangeSubmit(Exchange, ABCExchangeSubmit):
         if response is None:
             return None
 
-        return [x['path'] for x in response['files'] if
-                os.path.splitext(x['path'])[1] == '.ipynb']
+        return [
+            x['path']
+            for x in response['files']
+            if os.path.splitext(x['path'])[1] == '.ipynb'
+        ]
 
     def init_src(self):
         if self.path_includes_course:
-            root = os.path.join(self.coursedir.course_id, self.coursedir.assignment_id)
+            root = os.path.join(
+                self.coursedir.course_id, self.coursedir.assignment_id
+            )
             other_path = os.path.join(self.coursedir.course_id, "*")
         else:
             root = self.coursedir.assignment_id
@@ -33,7 +37,9 @@ class ExchangeSubmit(Exchange, ABCExchangeSubmit):
         self.src_path = os.path.abspath(os.path.join(self.assignment_dir, root))
         self.coursedir.assignment_id = os.path.split(self.src_path)[-1]
         if not os.path.isdir(self.src_path):
-            self._assignment_not_found(self.src_path, os.path.abspath(other_path))
+            self._assignment_not_found(
+                self.src_path, os.path.abspath(other_path)
+            )
 
     def init_dest(self):
         if self.coursedir.course_id == '':
@@ -41,21 +47,29 @@ class ExchangeSubmit(Exchange, ABCExchangeSubmit):
 
         self.cache_path = os.path.join(self.cache, self.coursedir.course_id)
         if self.coursedir.student_id != '*':
-            self.fail('Submitting assignments with an explicit student ID is '
-                      'not possible with ngshare.')
+            self.fail(
+                'Submitting assignments with an explicit student ID is '
+                'not possible with ngshare.'
+            )
         else:
             student_id = self.username
         if self.add_random_string:
             random_str = base64.urlsafe_b64encode(os.urandom(9)).decode('ascii')
             self.assignment_filename = '{}+{}+{}+{}'.format(
-                student_id, self.coursedir.assignment_id, self.timestamp, random_str)
+                student_id,
+                self.coursedir.assignment_id,
+                self.timestamp,
+                random_str,
+            )
         else:
             self.assignment_filename = '{}+{}+{}'.format(
-                student_id, self.coursedir.assignment_id, self.timestamp)
+                student_id, self.coursedir.assignment_id, self.timestamp
+            )
 
     def check_filename_diff(self):
         released_notebooks = self._get_assignment_notebooks(
-            self.coursedir.course_id, self.coursedir.assignment_id)
+            self.coursedir.course_id, self.coursedir.assignment_id
+        )
         if released_notebooks is None:
             self.log.warning('Unable to get list of assignment files.')
             released_notebooks = []
@@ -82,11 +96,8 @@ class ExchangeSubmit(Exchange, ABCExchangeSubmit):
                 submitted_diff.append("{}: {}".format(filename, 'EXTRA'))
 
         if missing or extra:
-            diff_msg = (
-                "Expected:\n\t{}\nSubmitted:\n\t{}".format(
-                    '\n\t'.join(release_diff),
-                    '\n\t'.join(submitted_diff),
-                )
+            diff_msg = "Expected:\n\t{}\nSubmitted:\n\t{}".format(
+                '\n\t'.join(release_diff), '\n\t'.join(submitted_diff),
             )
             if missing and self.strict:
                 self.fail(
@@ -103,7 +114,9 @@ class ExchangeSubmit(Exchange, ABCExchangeSubmit):
 
     def post_submission(self, src_path):
         encoded_dir = self.encode_dir(src_path, ignore=self.ignore_patterns())
-        url = '/submission/{}/{}'.format(self.coursedir.course_id, self.coursedir.assignment_id)
+        url = '/submission/{}/{}'.format(
+            self.coursedir.course_id, self.coursedir.assignment_id
+        )
 
         response = self.ngshare_api_post(url, encoded_dir)
         if response is None:
@@ -121,14 +134,22 @@ class ExchangeSubmit(Exchange, ABCExchangeSubmit):
             return
 
         # also copy to the cache
-        cache_path = os.path.join(self.cache_path, '{}+{}+{}'.format(
-            self.username, self.coursedir.assignment_id, self.timestamp))
+        cache_path = os.path.join(
+            self.cache_path,
+            '{}+{}+{}'.format(
+                self.username, self.coursedir.assignment_id, self.timestamp
+            ),
+        )
         if not os.path.isdir(self.cache_path):
             os.makedirs(self.cache_path)
         self.do_copy(self.src_path, cache_path)
         with open(os.path.join(cache_path, "timestamp.txt"), "w") as fh:
             fh.write(self.timestamp)
 
-        self.log.info("Submitted as: {} {} {}".format(
-            self.coursedir.course_id, self.coursedir.assignment_id, str(self.timestamp)
-        ))
+        self.log.info(
+            "Submitted as: {} {} {}".format(
+                self.coursedir.course_id,
+                self.coursedir.assignment_id,
+                str(self.timestamp),
+            )
+        )

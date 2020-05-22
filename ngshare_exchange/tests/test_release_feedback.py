@@ -19,13 +19,15 @@ class TestExchangeReleaseFeedback(TestExchange):
     timestamp = ''
 
     def _mock_requests_release(self):
-        url = '{}/feedback/{}/{}/{}'.format(self.base_url,
-                self.course_id, self.assignment_id, self.student_id)
+        url = '{}/feedback/{}/{}/{}'.format(
+            self.base_url, self.course_id, self.assignment_id, self.student_id
+        )
         self.requests_mocker.post(url, json=self._post_feedback)
 
     def _mock_assignment_not_found(self):
-        url = '{}/feedback/{}/{}/{}'.format(self.base_url,
-                self.course_id, self.assignment_id, self.student_id)
+        url = '{}/feedback/{}/{}/{}'.format(
+            self.base_url, self.course_id, self.assignment_id, self.student_id
+        )
         response = {'success': False, 'message': 'Assignment not found'}
         self.requests_mocker.post(url, json=response)
 
@@ -38,8 +40,7 @@ class TestExchangeReleaseFeedback(TestExchange):
             assert len(files) == 1
             feedback_name = self.notebook_id + '.html'
             assert files[0]['path'] == feedback_name
-            actual_content = base64.b64decode(files[0]['content'
-                    ].encode())
+            actual_content = base64.b64decode(files[0]['content'].encode())
             reference_file = self.files_path / self.feedback_file
             with open(reference_file, 'rb') as expected_content:
                 assert actual_content == expected_content.read()
@@ -54,26 +55,33 @@ class TestExchangeReleaseFeedback(TestExchange):
         course_id=TestExchange.course_id,
         assignment_id=TestExchange.assignment_id,
         student_id=TestExchange.student_id,
-        ):
-        return self._new_exchange_object(ExchangeReleaseFeedback,
-                course_id, assignment_id, student_id)
+    ):
+        return self._new_exchange_object(
+            ExchangeReleaseFeedback, course_id, assignment_id, student_id
+        )
 
     def _prepare_feedback(self):
-        feedback_dir = self.course_dir / 'feedback' / self.student_id \
-            / self.assignment_id
+        feedback_dir = (
+            self.course_dir / 'feedback' / self.student_id / self.assignment_id
+        )
         files_dir = Path(__file__).parent / 'files'
         os.makedirs(feedback_dir)
-        shutil.copyfile(files_dir / 'feedback.html', feedback_dir
-                        / (self.notebook_id + '.html'))
+        shutil.copyfile(
+            files_dir / 'feedback.html',
+            feedback_dir / (self.notebook_id + '.html'),
+        )
         with open(feedback_dir / 'timestamp.txt', 'w') as f:
             f.write('some_timestamp')
 
     def _prepare_feedback_2(self):
-        feedback_dir = self.course_dir / 'feedback' / self.student_id \
-            / self.assignment_id
+        feedback_dir = (
+            self.course_dir / 'feedback' / self.student_id / self.assignment_id
+        )
         files_dir = Path(__file__).parent / 'files'
-        shutil.copyfile(files_dir / 'feedback-changed.html',
-                        feedback_dir / (self.notebook_id + '.html'))
+        shutil.copyfile(
+            files_dir / 'feedback-changed.html',
+            feedback_dir / (self.notebook_id + '.html'),
+        )
         with open(feedback_dir / 'timestamp.txt', 'w') as f:
             f.write('some_other_timestamp')
 
@@ -133,10 +141,12 @@ class TestExchangeReleaseFeedback(TestExchange):
         assert self.test_completed
 
     def test_release_multiple_students(self):
-        feedback_dir1 = self.course_dir / 'feedback' / 'student_2' \
-            / self.assignment_id
-        feedback_dir2 = self.course_dir / 'feedback' / 'student_1' \
-            / self.assignment_id
+        feedback_dir1 = (
+            self.course_dir / 'feedback' / 'student_2' / self.assignment_id
+        )
+        feedback_dir2 = (
+            self.course_dir / 'feedback' / 'student_1' / self.assignment_id
+        )
         self.student_id = 'student_2'
         self._prepare_feedback()
         assert os.path.exists(feedback_dir1)

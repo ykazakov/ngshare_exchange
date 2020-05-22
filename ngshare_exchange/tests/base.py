@@ -16,7 +16,7 @@ def parse_body(body: str):
     return dict(urllib.parse.parse_qsl(body))
 
 
-class TestExchange():
+class TestExchange:
     course_id = 'abc101'
     assignment_id = 'ps1'
     student_id = 'student_1'
@@ -31,8 +31,9 @@ class TestExchange():
         return Path(tmpdir_factory.mktemp(self.course_id)).absolute()
 
     def _mock_all(self, request: PreparedRequest, content):
-        getLogger().fatal('The request "%s" has not been mocked yet.',
-                          request.url)
+        getLogger().fatal(
+            'The request "%s" has not been mocked yet.', request.url
+        )
         content.status_code = 404
         return ''
 
@@ -57,14 +58,18 @@ class TestExchange():
         self.course_dir = self._init_course_dir(tmpdir_factory)
         self.cache_dir = self._init_cache_dir(tmpdir_factory)
         self.requests_mocker = requests_mock
-        requests_mock.register_uri(rq_mock.ANY, rq_mock.ANY,
-                                   text=self._mock_all)
+        requests_mock.register_uri(
+            rq_mock.ANY, rq_mock.ANY, text=self._mock_all
+        )
 
     def mock_404(self):
-        self.requests_mocker.register_uri(rq_mock.ANY, rq_mock.ANY,
-                                          status_code=404)
+        self.requests_mocker.register_uri(
+            rq_mock.ANY, rq_mock.ANY, status_code=404
+        )
 
     def mock_unsuccessful(self):
         self.requests_mocker.register_uri(
-            rq_mock.ANY, rq_mock.ANY,
-            json={'success': False, 'message': 'Something happened'})
+            rq_mock.ANY,
+            rq_mock.ANY,
+            json={'success': False, 'message': 'Something happened'},
+        )

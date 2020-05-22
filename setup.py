@@ -42,6 +42,6 @@ setuptools.setup(
         'fuzzywuzzy',
         'traitlets',
         'jupyter_core',
-        'nbgrader>=0.7.0', # unfortunately not out yet?
+        'nbgrader>=0.7.0',  # unfortunately not out yet?
     ],
 )

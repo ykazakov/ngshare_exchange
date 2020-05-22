@@ -4,17 +4,22 @@ import re
 import base64
 import json
 
-from nbgrader.exchange.abc import ExchangeReleaseFeedback as ABCExchangeReleaseFeedback
+from nbgrader.exchange.abc import (
+    ExchangeReleaseFeedback as ABCExchangeReleaseFeedback,
+)
 from .exchange import Exchange
 
 
 class ExchangeReleaseFeedback(Exchange, ABCExchangeReleaseFeedback):
-
     def init_src(self):
-        student_id = self.coursedir.student_id if self.coursedir.student_id else '*'
+        student_id = (
+            self.coursedir.student_id if self.coursedir.student_id else '*'
+        )
         self.src_path = self.coursedir.format_path(
-            self.coursedir.feedback_directory, student_id,
-            self.coursedir.assignment_id)
+            self.coursedir.feedback_directory,
+            student_id,
+            self.coursedir.assignment_id,
+        )
 
     def init_dest(self):
         if self.coursedir.course_id == '':
@@ -29,17 +34,24 @@ class ExchangeReleaseFeedback(Exchange, ABCExchangeReleaseFeedback):
         staged_feedback = {}  # Maps student IDs to submissions.
         html_files = glob.glob(os.path.join(self.src_path, "*.html"))
         for html_file in html_files:
-            regexp = re.escape(os.path.sep).join([
-                self.coursedir.format_path(
-                    self.coursedir.feedback_directory,
-                    "(?P<student_id>.*)",
-                    self.coursedir.assignment_id, escape=True),
-                "(?P<notebook_id>.*).html"
-            ])
+            regexp = re.escape(os.path.sep).join(
+                [
+                    self.coursedir.format_path(
+                        self.coursedir.feedback_directory,
+                        "(?P<student_id>.*)",
+                        self.coursedir.assignment_id,
+                        escape=True,
+                    ),
+                    "(?P<notebook_id>.*).html",
+                ]
+            )
 
             m = re.match(regexp, html_file)
             if m is None:
-                msg = "Could not match '%s' with regexp '%s'" % (html_file, regexp)
+                msg = "Could not match '%s' with regexp '%s'" % (
+                    html_file,
+                    regexp,
+                )
                 self.log.error(msg)
                 continue
 
@@ -51,8 +63,9 @@ class ExchangeReleaseFeedback(Exchange, ABCExchangeReleaseFeedback):
                 continue
 
             feedback_dir = os.path.split(html_file)[0]
-            with open(os.path.join(feedback_dir, 'timestamp.txt')) as\
-                    timestamp_file:
+            with open(
+                os.path.join(feedback_dir, 'timestamp.txt')
+            ) as timestamp_file:
                 timestamp = timestamp_file.read()
 
             if student_id not in staged_feedback.keys():
@@ -60,17 +73,24 @@ class ExchangeReleaseFeedback(Exchange, ABCExchangeReleaseFeedback):
             if timestamp not in staged_feedback[student_id].keys():
                 staged_feedback[student_id][timestamp] = []  # List of info.
             staged_feedback[student_id][timestamp].append(
-                {'notebook_id': notebook_id, 'path': html_file})
+                {'notebook_id': notebook_id, 'path': html_file}
+            )
 
         for student_id, submission in staged_feedback.items():  # Student.
             for timestamp, feedback_info in submission.items():  # Submission.
-                self.log.info("Releasing feedback for student '{}' on "
-                              "assignment '{}/{}/{}' ({})".format(
-                                student_id, self.coursedir.course_id,
-                                self.coursedir.assignment_id, notebook_id,
-                                timestamp))
-                retvalue = self.post_feedback(student_id, timestamp,
-                                              feedback_info)
+                self.log.info(
+                    "Releasing feedback for student '{}' on "
+                    "assignment '{}/{}/{}' ({})".format(
+                        student_id,
+                        self.coursedir.course_id,
+                        self.coursedir.assignment_id,
+                        notebook_id,
+                        timestamp,
+                    )
+                )
+                retvalue = self.post_feedback(
+                    student_id, timestamp, feedback_info
+                )
                 if retvalue is None:
                     self.fail('Failed to upload feedback to server.')
                 else:
@@ -83,10 +103,15 @@ class ExchangeReleaseFeedback(Exchange, ABCExchangeReleaseFeedback):
         represented as a dictionary with a "path" to the local feedback file and
         "notebook_id" of the corresponding notebook.
         """
-        url = '/feedback/{}/{}/{}'.format(self.coursedir.course_id, self.coursedir.assignment_id, student_id)
-        files = json.dumps([self.encode_file(x['path'],
-                                             '{}.html'.format(x['notebook_id'])
-                                             ) for x in feedback_info])
+        url = '/feedback/{}/{}/{}'.format(
+            self.coursedir.course_id, self.coursedir.assignment_id, student_id
+        )
+        files = json.dumps(
+            [
+                self.encode_file(x['path'], '{}.html'.format(x['notebook_id']))
+                for x in feedback_info
+            ]
+        )
         data = {'timestamp': timestamp, 'files': files}
 
         return self.ngshare_api_post(url, data)
@@ -95,5 +120,7 @@ class ExchangeReleaseFeedback(Exchange, ABCExchangeReleaseFeedback):
     def encode_file(self, filesystem_path, assignment_path):
         with open(filesystem_path, 'rb') as f:
             content = f.read()
-        return {'path': assignment_path, 'content':
-                base64.encodebytes(content).decode()}
+        return {
+            'path': assignment_path,
+            'content': base64.encodebytes(content).decode(),
+        }
