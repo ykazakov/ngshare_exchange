@@ -10,7 +10,7 @@ import requests_mock as rq_mock
 from requests_mock import Mocker
 import urllib
 import tempfile
-import ngshare_management as nm
+from .. import ngshare_management as nm
 from io import StringIO
 
 
@@ -262,6 +262,14 @@ class TestCourseManagement:
         out, err = capsys.readouterr()
         assert 'The csv file you entered does not exist' in out
 
+        with tempfile.NamedTemporaryFile() as f:
+            f.writelines(
+                [
+                    "student_id,first_name,last_name,email",
+                    "sid1,jane,doe,jd@mail.com",
+                    "sid2,john,perez,jp@mail.com",
+                ]
+            )
         cmd = self.form_command(
             'add_students',
             course_id=self.course_id,
@@ -375,34 +383,35 @@ class TestCourseManagement:
 
     def test_add_students_parsing(self, capsys):
         # test empty file
-        new_file, filename = tempfile.mkstemp()
-        with pytest.raises(SystemExit) as se:
-            nm.add_students(self.course_id, filename, False)
-        assert se.type == SystemExit
-        assert se.value.code == -1
-        out, err = capsys.readouterr()
-        assert 'The csv file you entered is empty' in out
+        with tempfile.NamedTemporaryFile() as f:
+            with pytest.raises(SystemExit) as se:
+                nm.add_students(self.course_id, f.name, False)
+            assert se.type == SystemExit
+            assert se.value.code == -1
+            out, err = capsys.readouterr()
+            assert 'The csv file you entered is empty' in out
 
         # test missing a column
-        new_file2, filename2 = tempfile.mkstemp()
-        with open(filename2, 'w') as f:
+        with tempfile.NamedTemporaryFile() as f:
             f.write('first_name,last_name,email')
 
-        with pytest.raises(SystemExit) as se:
-            nm.add_students(self.course_id, filename2, False)
-        assert se.type == SystemExit
-        assert se.value.code == -1
-        out, err = capsys.readouterr()
-        assert 'Missing column {} in {}.'.format('student_id', filename2) in out
+            with pytest.raises(SystemExit) as se:
+                nm.add_students(self.course_id, f.name, False)
+            assert se.type == SystemExit
+            assert se.value.code == -1
+            out, err = capsys.readouterr()
+            assert (
+                'Missing column {} in {}.'.format('student_id', filename2)
+                in out
+            )
 
-        new_file3, filename3 = tempfile.mkstemp()
-        with open(filename3, 'w') as f:
+        with tempfile.NamedTemporaryFile() as f:
             f.write('student_id,first_name,last_name,email\n')
             f.write(',jane,doe,jd@mail.com')
 
-        with pytest.raises(SystemExit) as se:
-            nm.add_students(self.course_id, filename3, False)
-        assert se.type == SystemExit
-        assert se.value.code == -1
-        out, err = capsys.readouterr()
-        assert 'Student ID cannot be empty (row 1)' in out
+            with pytest.raises(SystemExit) as se:
+                nm.add_students(self.course_id, filename3, False)
+            assert se.type == SystemExit
+            assert se.value.code == -1
+            out, err = capsys.readouterr()
+            assert 'Student ID cannot be empty (row 1)' in out
