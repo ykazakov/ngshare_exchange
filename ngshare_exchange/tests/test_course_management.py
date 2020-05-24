@@ -265,17 +265,18 @@ class TestCourseManagement:
         with tempfile.NamedTemporaryFile() as f:
             f.writelines(
                 [
-                    "student_id,first_name,last_name,email",
-                    "sid1,jane,doe,jd@mail.com",
-                    "sid2,john,perez,jp@mail.com",
+                    b"student_id,first_name,last_name,email\n",
+                    b"sid1,jane,doe,jd@mail.com\n",
+                    b"sid2,john,perez,jp@mail.com\n",
                 ]
             )
-        cmd = self.form_command(
-            'add_students',
-            course_id=self.course_id,
-            students_csv='students.csv',
-        )
-        nm.execute_command(cmd)
+            f.flush()
+            cmd = self.form_command(
+                'add_students',
+                course_id=self.course_id,
+                students_csv=f.name,
+            )
+            nm.execute_command(cmd)
         out, err = capsys.readouterr()
         assert 'sid1 was sucessfuly added to math101' in out
         assert 'sid2 was sucessfuly added to math101' in out
@@ -393,7 +394,8 @@ class TestCourseManagement:
 
         # test missing a column
         with tempfile.NamedTemporaryFile() as f:
-            f.write('first_name,last_name,email')
+            f.write(b'first_name,last_name,email')
+            f.flush()
 
             with pytest.raises(SystemExit) as se:
                 nm.add_students(self.course_id, f.name, False)
@@ -401,16 +403,17 @@ class TestCourseManagement:
             assert se.value.code == -1
             out, err = capsys.readouterr()
             assert (
-                'Missing column {} in {}.'.format('student_id', filename2)
+                'Missing column {} in {}.'.format('student_id', f.name)
                 in out
             )
 
         with tempfile.NamedTemporaryFile() as f:
-            f.write('student_id,first_name,last_name,email\n')
-            f.write(',jane,doe,jd@mail.com')
+            f.write(b'student_id,first_name,last_name,email\n')
+            f.write(b',jane,doe,jd@mail.com')
+            f.flush()
 
             with pytest.raises(SystemExit) as se:
-                nm.add_students(self.course_id, filename3, False)
+                nm.add_students(self.course_id, f.name, False)
             assert se.type == SystemExit
             assert se.value.code == -1
             out, err = capsys.readouterr()
