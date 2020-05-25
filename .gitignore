@@ -2,3 +2,8 @@ __pycache__/
 .pytest_cache/
 *.swp
 .coverage
+/dist/
+/build/
+*.egg-info/
+.installed.cfg
+*.egg
