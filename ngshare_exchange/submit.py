@@ -53,18 +53,6 @@ class ExchangeSubmit(Exchange, ABCExchangeSubmit):
             )
         else:
             student_id = self.username
-        if self.add_random_string:
-            random_str = base64.urlsafe_b64encode(os.urandom(9)).decode('ascii')
-            self.assignment_filename = '{}+{}+{}+{}'.format(
-                student_id,
-                self.coursedir.assignment_id,
-                self.timestamp,
-                random_str,
-            )
-        else:
-            self.assignment_filename = '{}+{}+{}'.format(
-                student_id, self.coursedir.assignment_id, self.timestamp
-            )
 
     def check_filename_diff(self):
         released_notebooks = self._get_assignment_notebooks(
