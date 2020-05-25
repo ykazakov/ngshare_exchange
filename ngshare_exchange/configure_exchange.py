@@ -8,7 +8,7 @@ from .submit import ExchangeSubmit
 from .collect import ExchangeCollect
 
 
-def configureExchange(c, ngshare_url = None):
+def configureExchange(c, ngshare_url=None):
     '''Modifies nbgrader configuration to use ngshare_exchange as the exchange.
     c is the nbgrader config you get using get_config.
     To use, simply specify the following in your nbgrader_config.py file:

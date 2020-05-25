@@ -272,9 +272,7 @@ class TestCourseManagement:
             )
             f.flush()
             cmd = self.form_command(
-                'add_students',
-                course_id=self.course_id,
-                students_csv=f.name,
+                'add_students', course_id=self.course_id, students_csv=f.name,
             )
             nm.execute_command(cmd)
         out, err = capsys.readouterr()
@@ -403,8 +401,7 @@ class TestCourseManagement:
             assert se.value.code == -1
             out, err = capsys.readouterr()
             assert (
-                'Missing column {} in {}.'.format('student_id', f.name)
-                in out
+                'Missing column {} in {}.'.format('student_id', f.name) in out
             )
 
         with tempfile.NamedTemporaryFile() as f:

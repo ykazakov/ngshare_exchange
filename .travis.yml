@@ -20,7 +20,7 @@ before_install:
 install:
 - python3 -m pip install .
 before_script:
-- python3 -m pip install pytest pytest-cov pytest-tornado black
+- python3 -m pip install pytest pytest-cov pytest-tornado black requests_mock
 script:
 - python3 -m pytest ./ngshare_exchange/ --cov=./ngshare_exchange/
 - python3 -m black -S -l 80 --check .

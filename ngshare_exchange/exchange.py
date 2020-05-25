@@ -42,7 +42,9 @@ class Exchange(ABCExchange):
             # assuming the service is called ngshare, which it should
             return "http://proxy-public/services/ngshare"
         else:
-            raise ValueError("ngshare url not configured in a non-k8s environment! Please configure the URL manually in nbgrader_config.py")
+            raise ValueError(
+                "ngshare url not configured in a non-k8s environment! Please configure the URL manually in nbgrader_config.py"
+            )
 
     def _ngshare_api_check_error(self, response, url):
         if response.status_code != requests.codes.ok:
