@@ -25,16 +25,24 @@ class Exchange(ABCExchange):
         else os.environ['USER']
     )
 
+    _ngshare_url = Unicode(
+        help=dedent(
+            """
+            Override default ngshare URL
+            """
+        ),
+    ).tag(config=True)
+
     @property
     def ngshare_url(self):
+        if self._ngshare_url:
+            return self._ngshare_url
         if 'PROXY_PUBLIC_SERVICE_HOST' in os.environ:
             # we are in a kubernetes environment, so dns based service discovery should work
             # assuming the service is called ngshare, which it should
             return "http://proxy-public/services/ngshare"
         else:
-            # TODO: maybe expose this in the nbgrader configs?
-            # for now, keeping the original url to not break docker testing setup
-            return 'http://172.17.0.3:11111/api'  # need to get IP address of container
+            raise ValueError("ngshare url not configured in a non-k8s environment! Please configure the URL manually in nbgrader_config.py")
 
     def _ngshare_api_check_error(self, response, url):
         if response.status_code != requests.codes.ok:
