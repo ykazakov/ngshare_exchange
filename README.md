@@ -4,6 +4,21 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Documentation Status](https://readthedocs.org/projects/ngshare-exchange/badge/?version=latest)](https://ngshare-exchange.readthedocs.io/en/latest/?badge=latest)
 
+```
+.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
+    :target: https://github.com/psf/black
+
+.. image:: https://travis-ci.org/lxylxy123456/ngshare_exchange.svg?branch=master
+    :target: https://travis-ci.org/lxylxy123456/ngshare_exchange
+
+.. image:: https://codecov.io/gh/lxylxy123456/ngshare_exchange/branch/master/graph/badge.svg
+    :target: https://codecov.io/gh/lxylxy123456/ngshare_exchange
+
+.. image:: https://readthedocs.org/projects/ngshare-exchange/badge/?version=latest
+    :target: https://ngshare-exchange.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+```
+
 (TODO: Add badges after finishing up Travis + Codecov)
 Custom [nbgrader](https://github.com/jupyter/nbgrader) exchange to be used with [ngshare](https://github.com/lxylxy123456/ngshare). This should be installed in the singleuser image of [Z2JH](https://github.com/jupyterhub/zero-to-jupyterhub-k8s) to allow the users to use ngshare.
 
