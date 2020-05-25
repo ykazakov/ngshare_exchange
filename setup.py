@@ -42,6 +42,12 @@ setuptools.setup(
         'fuzzywuzzy',
         'traitlets',
         'jupyter_core',
-        'nbgrader>=0.7.0',  # unfortunately not out yet?
+        #'nbgrader>=0.7.0',  # unfortunately not out yet?
+        'nbgrader==0.7.0.dev0',
     ],
+    entry_points={
+        'console_scripts': [
+            'ngshare-course-management = ngshare_exchange.ngshare_management:main'
+        ]
+    },
 )
