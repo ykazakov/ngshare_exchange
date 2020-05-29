@@ -4,58 +4,11 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Documentation Status](https://readthedocs.org/projects/ngshare-exchange/badge/?version=latest)](https://ngshare-exchange.readthedocs.io/en/latest/?badge=latest)
 
-```
-.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
-    :target: https://github.com/psf/black
-
-.. image:: https://travis-ci.org/lxylxy123456/ngshare_exchange.svg?branch=master
-    :target: https://travis-ci.org/lxylxy123456/ngshare_exchange
-
-.. image:: https://codecov.io/gh/lxylxy123456/ngshare_exchange/branch/master/graph/badge.svg
-    :target: https://codecov.io/gh/lxylxy123456/ngshare_exchange
-
-.. image:: https://readthedocs.org/projects/ngshare-exchange/badge/?version=latest
-    :target: https://ngshare-exchange.readthedocs.io/en/latest/?badge=latest
-    :alt: Documentation Status
-```
-
-(TODO: Add badges after finishing up Travis + Codecov)
 Custom [nbgrader](https://github.com/jupyter/nbgrader) exchange to be used with [ngshare](https://github.com/lxylxy123456/ngshare). This should be installed in the singleuser image of [Z2JH](https://github.com/jupyterhub/zero-to-jupyterhub-k8s) to allow the users to use ngshare.
 
 # Installation instructions
 
-This assumes you have [installed ngshare](https://ngshare.readthedocs.io/en/latest/user_guide/install_ngshare.html).
-
-### Z2JH
-You should already be familiar with how to [customize user images](https://zero-to-jupyterhub.readthedocs.io/en/latest/customizing/user-environment.html#customize-an-existing-docker-image) on Z2JH. Add the following to your customized singleuser container:
-1. Install the latest nbgrader in the pod. Unfortunately, ngshare_exchange relies on [pluggable exchange](https://github.com/jupyter/nbgrader/pull/1238), which is available in the not-yet-released nbgrader v0.7.0. Therefore, you have to install it from git for now: `python3 -m pip install git+https://github.com/jupyter/nbgrader.git`
-2. Install ngshare_exchange. This can be easily done by running `python3 -m pip install git+https://github.com/lxylxy123456/ngshare_exchange`. We're also going to package this on PyPI soon.
-3. Ask nbgrader to use ngshare_exchange as the default exchange. Simply create a global nbgrader configuration file at `/etc/jupyter/nbgrader_config.py`, with the following contents:
-```python
-from ngshare_exchange import configureExchange
-configureExchange(get_config())
-```
-That should be all! Here's a sample Dockerfile that you can add to yours:
-```Dockerfile
-FROM jupyterhub/k8s-singleuser-sample:0.9.0
-
-# Install latest nbgrader and enable the extensions
-RUN python3 -m pip install git+https://github.com/jupyter/nbgrader.git && \
-    jupyter nbextension install --symlink --sys-prefix --py nbgrader && \
-    jupyter nbextension enable --sys-prefix --py nbgrader && \
-    jupyter serverextension enable --sys-prefix --py nbgrader
-
-# Install ngshare_exchange
-RUN python3 -m pip install git+https://github.com/lxylxy123456/ngshare_exchange
-
-# Configure nbgrader
-USER 0
-RUN echo -e "from ngshare_exchange import configureExchange\nconfigureExchange(get_config())" >> /etc/jupyter/nbgrader_config.py
-USER $NB_UID
-```
-
-### Regular JupyterHub
-If you aren't using Kubernetes, you may still run ngshare if you wish. If that's the case, you just need to install ngshare_exchange, but you also need to tell it where the ngshare service is. TODO: Finish writing this part once I finish writing ngshare installation documentation for regular JupyterHub.
+To install this and `ngshare`, see the instructions on [Read the Docs](https://ngshare.readthedocs.io/en/latest/user_guide/install.html).
 
 # ngshare Course Management
 
