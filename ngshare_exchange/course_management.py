@@ -37,11 +37,24 @@ def get_username():
 
 
 def ngshare_url():
-    if 'PROXY_PUBLIC_SERVICE_HOST' in os.environ:
-        return 'http://proxy-public/services/ngshare'
-    else:
-        # replace this with correct URL if you are not using a kubernetes set up
-        return 'http://127.0.0.1:12121/api'
+    global _ngshare_url
+    try:
+        return _ngshare_url
+    except NameError:
+        try:
+            from nbgrader.apps import NbGrader
+
+            nbgrader = NbGrader()
+            nbgrader.load_config_file()
+            exchange = nbgrader.config.ExchangeFactory.exchange()
+            _ngshare_url = exchange.ngshare_url
+            return _ngshare_url
+        except Exception as e:
+            prRed(
+                "Cannot determine ngshare URL. Please check your nbgrader_config.py!",
+                False,
+            )
+            prRed(e)
 
 
 def get_header():

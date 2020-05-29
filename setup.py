@@ -47,7 +47,7 @@ setuptools.setup(
     ],
     entry_points={
         'console_scripts': [
-            'ngshare-course-management = ngshare_exchange.ngshare_management:main'
+            'ngshare-course-management = ngshare_exchange.course_management:main'
         ]
     },
 )
