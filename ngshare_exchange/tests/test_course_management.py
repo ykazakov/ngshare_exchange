@@ -14,11 +14,6 @@ from .. import course_management as cm
 from io import StringIO
 
 
-class Command:
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
-
-
 def remove_color(s):
     ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
     result = ansi_escape.sub('', s)
@@ -53,34 +48,6 @@ class TestCourseManagement:
         self.requests_mocker = requests_mock
         requests_mock.register_uri(
             rq_mock.ANY, rq_mock.ANY, text=self._mock_all
-        )
-
-    def form_command(
-        self,
-        command,
-        course_id=None,
-        student_id=None,
-        instructor_id=None,
-        instructors=[],
-        first_name=None,
-        last_name=None,
-        email=None,
-        students_csv=None,
-        gb=False,
-        force=False,
-    ):
-        return Command(
-            command=command,
-            course_id=course_id,
-            student_id=student_id,
-            instructor_id=instructor_id,
-            instructors=instructors,
-            first_name=first_name,
-            last_name=last_name,
-            email=email,
-            students_csv=students_csv,
-            gb=gb,
-            force=force,
         )
 
     def _mock_all(self, request: PreparedRequest, content):
@@ -156,9 +123,7 @@ class TestCourseManagement:
         self.requests_mocker.post(url, json=self._get_user_info)
 
     def _mock_add_students(self):
-        url = '{}/students/{}'.format(
-            NGSHARE_URL, self.course_id, self.student_id
-        )
+        url = '{}/students/{}'.format(NGSHARE_URL, self.course_id)
         self.requests_mocker.post(url, json=self._get_students_info)
 
     def _mock_add_instructor(self):
@@ -181,28 +146,21 @@ class TestCourseManagement:
 
     def test_crete_course(self, capsys):
         self._mock_create_course()
-        cmd = self.form_command(
-            'create_course',
-            course_id=self.course_id,
-            instructors=self.instructors,
-        )
-        cm.execute_command(cmd)
+        cm.main(['create_course', self.course_id] + self.instructors)
         out, err = capsys.readouterr()
         out = remove_color(out)
         assert ' Successfully created {}\n'.format(self.course_id) in out
 
         # test missing course id
         with pytest.raises(SystemExit) as se:
-            cmd = self.form_command('create_course')
-            cm.execute_command(cmd)
+            cm.main(['create_course'])
         assert se.type == SystemExit
-        assert se.value.code == -1
+        assert se.value.code == 2
 
         # try to create course again
         self._mock_create_course()
         with pytest.raises(SystemExit) as se:
-            cmd = self.form_command('create_course', course_id=self.course_id)
-            cm.execute_command(cmd)
+            cm.main(['create_course', self.course_id])
         out, err = capsys.readouterr()
         assert ' Course already exists' in out
         assert se.type == SystemExit
@@ -211,28 +169,30 @@ class TestCourseManagement:
     def test_add_student(self, capsys):
         # test missing course id
         with pytest.raises(SystemExit) as se:
-            cmd = self.form_command('add_student')
-            cm.execute_command(cmd)
+            cm.main(['add_student'])
         assert se.type == SystemExit
-        assert se.value.code == -1
+        assert se.value.code == 2
 
         # test missing student id
         with pytest.raises(SystemExit) as se:
-            cmd = self.form_command('add_student', course_id=self.course_id)
-            cm.execute_command(cmd)
+            cm.main(['add_student', self.course_id])
         assert se.type == SystemExit
-        assert se.value.code == -1
+        assert se.value.code == 2
 
         self._mock_add_student()
-        cmd = self.form_command(
-            'add_student',
-            course_id=self.course_id,
-            student_id=self.student_id,
-            first_name='jane',
-            last_name='doe',
-            email='jd@mail.com',
+        cm.main(
+            [
+                'add_student',
+                self.course_id,
+                self.student_id,
+                '-f',
+                'jane',
+                '-l',
+                'doe',
+                '-e' 'jd@mail.com',
+                '--no-gb',
+            ]
         )
-        cm.execute_command(cmd)
         out, err = capsys.readouterr()
         assert 'Successfully added/updated {}'.format(self.student_id) in out
 
@@ -240,24 +200,19 @@ class TestCourseManagement:
         self._mock_add_students()
         # test no course id
         with pytest.raises(SystemExit) as se:
-            cmd = self.form_command('add_students')
-            cm.execute_command(cmd)
+            cm.main(['add_students'])
         assert se.type == SystemExit
-        assert se.value.code == -1
+        assert se.value.code == 2
 
         # test no file
         with pytest.raises(SystemExit) as se:
-            cmd = self.form_command('add_students', course_id=self.course_id)
-            cm.execute_command(cmd)
+            cm.main(['add_students', self.course_id])
         assert se.type == SystemExit
-        assert se.value.code == -1
+        assert se.value.code == 2
 
         # test no non existing file
         with pytest.raises(SystemExit) as se:
-            cmd = self.form_command(
-                'add_students', course_id=self.course_id, students_csv='dne'
-            )
-            cm.execute_command(cmd)
+            cm.main(['add_students', self.course_id, 'dne'])
 
         assert se.type == SystemExit
         assert se.value.code == -1
@@ -273,10 +228,7 @@ class TestCourseManagement:
                 ]
             )
             f.flush()
-            cmd = self.form_command(
-                'add_students', course_id=self.course_id, students_csv=f.name,
-            )
-            cm.execute_command(cmd)
+            cm.main(['add_students', self.course_id, f.name, '--no-gb'])
         out, err = capsys.readouterr()
         assert 'sid1 was sucessfuly added to math101' in out
         assert 'sid2 was sucessfuly added to math101' in out
@@ -286,28 +238,30 @@ class TestCourseManagement:
 
         # test no course id
         with pytest.raises(SystemExit) as se:
-            cmd = self.form_command('add_instructor')
-            cm.execute_command(cmd)
+            cm.main(['add_instructor'])
         assert se.type == SystemExit
-        assert se.value.code == -1
+        assert se.value.code == 2
 
         # test no instructor id
         with pytest.raises(SystemExit) as se:
-            cmd = self.form_command('add_instructor', course_id=self.course_id)
-            cm.execute_command(cmd)
+            cm.main(['add_instructor', self.course_id])
         assert se.type == SystemExit
-        assert se.value.code == -1
+        assert se.value.code == 2
 
         # test valid
-        cmd = self.form_command(
-            'add_instructor',
-            course_id=self.course_id,
-            instructor_id=self.instructor_id,
-            first_name='john',
-            last_name='doe',
-            email='jd@mail.com',
+        cm.main(
+            [
+                'add_instructor',
+                self.course_id,
+                self.instructor_id,
+                '-f',
+                'john',
+                '-l',
+                'doe',
+                '-e',
+                'jd@mail.com',
+            ]
         )
-        cm.execute_command(cmd)
         out, err = capsys.readouterr()
         assert (
             'Successfully added {} as an instructor to {}'.format(
@@ -321,25 +275,18 @@ class TestCourseManagement:
 
         # test missing course id
         with pytest.raises(SystemExit) as se:
-            cmd = self.form_command('remove_student')
-            cm.execute_command(cmd)
+            cm.main(['remove_students'])
         assert se.type == SystemExit
-        assert se.value.code == -1
+        assert se.value.code == 2
 
         # test missing student id
         with pytest.raises(SystemExit) as se:
-            cmd = self.form_command('remove_student', course_id=self.course_id)
-            cm.execute_command(cmd)
+            cm.main(['remove_students', self.course_id])
         assert se.type == SystemExit
-        assert se.value.code == -1
+        assert se.value.code == 2
 
         # test valid
-        cmd = self.form_command(
-            'remove_student',
-            course_id=self.course_id,
-            student_id=self.student_id,
-        )
-        cm.execute_command(cmd)
+        cm.main(['remove_students', self.course_id, self.student_id, '--no-gb'])
         out, err = capsys.readouterr()
         assert (
             'Successfully deleted {} from {}'.format(
@@ -353,27 +300,18 @@ class TestCourseManagement:
 
         # test missing course id
         with pytest.raises(SystemExit) as se:
-            cmd = self.form_command('remove_instructor')
-            cm.execute_command(cmd)
+            cm.main(['remove_instructor'])
         assert se.type == SystemExit
-        assert se.value.code == -1
+        assert se.value.code == 2
 
         # test missing student id
         with pytest.raises(SystemExit) as se:
-            cmd = self.form_command(
-                'remove_instructor', course_id=self.course_id
-            )
-            cm.execute_command(cmd)
+            cm.main(['remove_instructor', self.course_id])
         assert se.type == SystemExit
-        assert se.value.code == -1
+        assert se.value.code == 2
 
         # test valid
-        cmd = self.form_command(
-            'remove_instructor',
-            course_id=self.course_id,
-            instructor_id=self.instructor_id,
-        )
-        cm.execute_command(cmd)
+        cm.main(['remove_instructor', self.course_id, self.instructor_id])
         out, err = capsys.readouterr()
         assert (
             'Successfully deleted instructor {} from {}'.format(
@@ -386,7 +324,7 @@ class TestCourseManagement:
         # test empty file
         with tempfile.NamedTemporaryFile() as f:
             with pytest.raises(SystemExit) as se:
-                cm.add_students(self.course_id, f.name, False)
+                cm.main(['add_students', self.course_id, f.name, '--no-gb'])
             assert se.type == SystemExit
             assert se.value.code == -1
             out, err = capsys.readouterr()
@@ -398,7 +336,7 @@ class TestCourseManagement:
             f.flush()
 
             with pytest.raises(SystemExit) as se:
-                cm.add_students(self.course_id, f.name, False)
+                cm.main(['add_students', self.course_id, f.name, '--no-gb'])
             assert se.type == SystemExit
             assert se.value.code == -1
             out, err = capsys.readouterr()
@@ -412,7 +350,7 @@ class TestCourseManagement:
             f.flush()
 
             with pytest.raises(SystemExit) as se:
-                cm.add_students(self.course_id, f.name, False)
+                cm.main(['add_students', self.course_id, f.name, '--no-gb'])
             assert se.type == SystemExit
             assert se.value.code == -1
             out, err = capsys.readouterr()

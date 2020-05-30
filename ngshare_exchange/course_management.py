@@ -115,17 +115,19 @@ def delete(url, data):
     return check_message(response)
 
 
-def create_course(course_id, instructors):
-    url = '{}/course/{}'.format(ngshare_url(), course_id)
+def create_course(args):
+    instructors = args.instructors or []
+    url = '{}/course/{}'.format(ngshare_url(), args.course_id)
     data = {'user': get_username(), 'instructors': json.dumps(instructors)}
 
     response = post(url, data)
-    prGreen('Successfully created {}'.format(course_id))
+    prGreen('Successfully created {}'.format(args.course_id))
 
 
-def add_student(course_id, student: User, gb):
+def add_student(args):
     # add student to ngshare
-    url = '{}/student/{}/{}'.format(ngshare_url(), course_id, student.id)
+    student = User(args.student_id, args.first_name, args.last_name, args.email)
+    url = '{}/student/{}/{}'.format(ngshare_url(), args.course_id, student.id)
     data = {
         'user': get_username(),
         'first_name': student.first_name,
@@ -134,30 +136,39 @@ def add_student(course_id, student: User, gb):
     }
 
     response = post(url, data)
-    prGreen('Successfully added/updated {} on {}'.format(student.id, course_id))
+    prGreen(
+        'Successfully added/updated {} on {}'.format(student.id, args.course_id)
+    )
 
-    if gb:
+    if not args.no_gb:
         add_jh_student(student)
 
 
 def add_jh_student(student: User):
     # add student to nbgrader gradebook
-    command = 'nbgrader db student add '
+    command = ['nbgrader', 'db', 'student', 'add']
 
     if len(student.first_name) > 0:
-        command += '--first-name {} '.format(student.first_name)
+        command.append('--first-name')
+        command.append(student.first_name)
     if len(student.last_name) > 0:
-        command += '--last-name {} '.format(student.last_name)
+        command.append('--last-name')
+        command.append(student.last_name)
     if len(student.email) > 0:
-        command += '--email {} '.format(student.email)
+        command.append('--email')
+        command.append(student.email)
 
-    command += student.id
-    os.system(command)
+    command.append(student.id)
+    subprocess.run(command)
 
 
-def add_students(course_id, students_csv, gb):
+def add_students(args):
     students = []
-    with open(students_csv, 'r') as f:
+    if not os.path.exists(args.csv_file):
+        prRed(
+            'The csv file you entered does not exist. Please enter a valid path!'
+        )
+    with open(args.csv_file, 'r') as f:
         csv_reader = csv.reader(f, delimiter=',')
         rows = list(csv_reader)
         if len(rows) == 0:
@@ -173,7 +184,7 @@ def add_students(course_id, students_csv, gb):
 
         for col in required_cols:
             if col not in cols_dict:
-                prRed('Missing column {} in {}.'.format(col, students_csv))
+                prRed('Missing column {} in {}.'.format(col, args.csv_file))
 
         for i, row in enumerate(rows[1:]):
             student_dict = {}
@@ -191,7 +202,7 @@ def add_students(course_id, students_csv, gb):
             student_dict['email'] = email
             students.append(student_dict)
 
-    url = '{}/students/{}'.format(ngshare_url(), course_id)
+    url = '{}/students/{}'.format(ngshare_url(), args.course_id)
     data = {'user': get_username(), 'students': json.dumps(students)}
 
     response = post(url, data)
@@ -200,14 +211,16 @@ def add_students(course_id, students_csv, gb):
         for i, s in enumerate(response['status']):
             user = s['username']
             if s['success']:
-                prGreen('{} was sucessfuly added to {}'.format(user, course_id))
+                prGreen(
+                    '{} was sucessfuly added to {}'.format(user, args.course_id)
+                )
                 student = User(
                     user,
                     students[i]['first_name'],
                     students[i]['last_name'],
                     students[i]['email'],
                 )
-                if gb:
+                if not args.no_gb:
                     add_jh_student(student)
             else:
                 prRed(
@@ -226,206 +239,185 @@ def remove_jh_student(student_id, force):
     os.system(command)
 
 
-def remove_student(course_id, student_id, gb, force):
-    if gb:
-        remove_jh_student(student_id, force)
+def remove_students(args):
+    for student in args.students:
+        if not args.no_gb:
+            remove_jh_student(student, args.force)
 
-    url = '{}/student/{}/{}'.format(ngshare_url(), course_id, student_id)
-    data = {'user': get_username()}
-    response = delete(url, data)
-    prGreen('Successfully deleted {} from {}'.format(student_id, course_id))
+        url = '{}/student/{}/{}'.format(ngshare_url(), args.course_id, student)
+        data = {'user': get_username()}
+        response = delete(url, data)
+        prGreen(
+            'Successfully deleted {} from {}'.format(student, args.course_id)
+        )
 
 
-def add_instructor(course_id, instructor: User):
-    url = '{}/instructor/{}/{}'.format(ngshare_url(), course_id, instructor.id)
+def add_instructor(args):
+    url = '{}/instructor/{}/{}'.format(
+        ngshare_url(), args.course_id, args.instructor_id
+    )
     data = {
         'user': get_username(),
-        'first_name': instructor.first_name,
-        'last_name': instructor.last_name,
-        'email': instructor.email,
+        'first_name': args.first_name,
+        'last_name': args.last_name,
+        'email': args.email,
     }
     print(data)
     response = post(url, data)
     prGreen(
         'Successfully added {} as an instructor to {}'.format(
-            instructor.id, course_id
+            args.instructor_id, args.course_id
         )
     )
 
 
-def remove_instructor(course_id, instructor_id):
-    url = '{}/instructor/{}/{}'.format(ngshare_url(), course_id, instructor_id)
+def remove_instructor(args):
+    url = '{}/instructor/{}/{}'.format(
+        ngshare_url(), args.course_id, args.instructor_id
+    )
     data = {'user': get_username()}
     response = delete(url, data)
     prGreen(
         'Successfully deleted instructor {} from {}'.format(
-            instructor_id, course_id
+            args.instructor_id, args.course_id
         )
     )
 
 
-def parse_input(argv):
+def parse_args(argv):
     parser = argparse.ArgumentParser(description='ngshare Course Management')
-    parser.add_argument(
-        '-c', '--course_id', default=None, help='A unique name for the course'
-    )
-    parser.add_argument(
-        '-s', '--student_id', default=None, help='The ID given to a student'
-    )
-    parser.add_argument(
-        '-i',
-        '--instructor_id',
-        default=None,
-        help='The ID given to an instructor',
-    )
-    parser.add_argument(
-        '-f',
-        '--first_name',
-        default=None,
-        help='First name of the user you are creating',
-    )
-    parser.add_argument(
-        '-l',
-        '--last_name',
-        default=None,
-        help='Last name of the user you are creating',
-    )
-    parser.add_argument(
-        '-e',
-        '--email',
-        default=None,
-        help='Last name of the user you are creating',
-    )
-    parser.add_argument(
-        '--students_csv',
-        default=None,
-        help='csv file containing a list of students to add. See students.csv as an example.',
-    )
+    subparsers = parser.add_subparsers()
 
-    parser.add_argument(
-        '--instructors',
+    create_course_parser = subparsers.add_parser(
+        'create_course', help='Create a course'
+    )
+    create_course_parser.add_argument(
+        'course_id', metavar='COURSE_ID', help='ID of the course'
+    )
+    create_course_parser.add_argument(
+        'instructors',
+        metavar='INSTRUCTOR',
         nargs='*',
-        default=[],
-        help='List of course instructors',
+        default=None,
+        help='List of instructors assigned to the course',
     )
+    create_course_parser.set_defaults(func=create_course)
 
-    parser.add_argument(
-        'command',
-        action='store',
-        type=str,
-        choices=[
-            'create_course',
-            'add_student',
-            'add_students',
-            'remove_student',
-            'add_instructor',
-            'remove_instructor',
-        ],
-        help='Command to execute',
+    add_instructor_parser = subparsers.add_parser(
+        'add_instructor', help='Add/update one instructor for a course'
     )
-    parser.add_argument(
-        '--gb',
+    add_instructor_parser.add_argument(
+        'course_id', metavar='COURSE_ID', help='ID of the course'
+    )
+    add_instructor_parser.add_argument(
+        'instructor_id',
+        metavar='INSTRUCTOR_ID',
+        help='Username of the added/modified instructor',
+    )
+    add_instructor_parser.add_argument(
+        '-f', '--first_name', default=None, help='First name of the instructor',
+    )
+    add_instructor_parser.add_argument(
+        '-l', '--last_name', default=None, help='Last name of the instructor',
+    )
+    add_instructor_parser.add_argument(
+        '-e', '--email', default=None, help='Email of the instructor',
+    )
+    add_instructor_parser.set_defaults(func=add_instructor)
+
+    remove_instructor_parser = subparsers.add_parser(
+        'remove_instructor', help='Remove one instructor from a course'
+    )
+    remove_instructor_parser.add_argument(
+        'course_id', metavar='COURSE_ID', help='ID of the course'
+    )
+    remove_instructor_parser.add_argument(
+        'instructor_id',
+        metavar='INSTRUCTOR_ID',
+        help='Username of the instructor to remove',
+    )
+    remove_instructor_parser.set_defaults(func=remove_instructor)
+
+    add_student_parser = subparsers.add_parser(
+        'add_student', help='Add/update one student for a course'
+    )
+    add_student_parser.add_argument(
+        'course_id', metavar='COURSE_ID', help='ID of the course'
+    )
+    add_student_parser.add_argument(
+        'student_id',
+        metavar='STUDENT_ID',
+        help='Username of the added/modified student',
+    )
+    add_student_parser.add_argument(
+        '-f', '--first_name', default=None, help='First name of the student',
+    )
+    add_student_parser.add_argument(
+        '-l', '--last_name', default=None, help='Last name of the student',
+    )
+    add_student_parser.add_argument(
+        '-e', '--email', default=None, help='Email of the student',
+    )
+    add_student_parser.add_argument(
+        '--no-gb',
         action='store_true',
-        default=False,
-        help='Add student to nbgrader gradebook',
+        help='Do not add student to local nbgrader gradebook',
     )
+    add_student_parser.set_defaults(func=add_student)
 
-    parser.add_argument(
+    add_students_parser = subparsers.add_parser(
+        'add_students',
+        help='Add/update multiple students in a course using a CSV file',
+    )
+    add_students_parser.add_argument(
+        'course_id', metavar='COURSE_ID', help='ID of the course'
+    )
+    add_students_parser.add_argument(
+        'csv_file',
+        metavar='CSV_FILE',
+        help='A CSV file with four fields: student_id,first_name,last_name,email',
+    )
+    add_students_parser.add_argument(
+        '--no-gb',
+        action='store_true',
+        help='Do not add students to local nbgrader gradebook',
+    )
+    add_students_parser.set_defaults(func=add_students)
+
+    remove_students_parser = subparsers.add_parser(
+        'remove_students', help='Remove one or more students from a course'
+    )
+    remove_students_parser.add_argument(
+        'course_id', metavar='COURSE_ID', help='ID of the course'
+    )
+    remove_students_parser.add_argument(
+        'students',
+        metavar='STUDENT',
+        nargs='+',
+        help='List of student IDs to remove',
+    )
+    remove_students_parser.add_argument(
+        '--no-gb',
+        action='store_true',
+        help='Do not remove student from local nbgrader gradebook',
+    )
+    remove_students_parser.add_argument(
         '--force',
         action='store_true',
-        default=False,
-        help='Force gradebook action',
+        help='Force student removal from local nbgrader gradebook, even if this deletes their grades',
     )
+    remove_students_parser.set_defaults(func=remove_students)
 
-    args = parser.parse_args()
-
+    parser.set_defaults(func=lambda x: parser.print_help())
+    args = parser.parse_args(argv)
     return args
-
-
-def execute_command(args):
-    command = args.command
-    course_id = args.course_id
-    student_id = args.student_id
-    instructor_id = args.instructor_id
-    instructors = args.instructors
-    first_name = args.first_name
-    last_name = args.last_name
-    email = args.email
-    students_csv = args.students_csv
-    gb = args.gb
-    force = args.force
-
-    if command == 'create_course':
-        if not course_id:
-            prRed(
-                'Please specify the course_id for the course with -c or --course_id'
-            )
-        create_course(course_id, instructors)
-    elif command == 'add_student':
-        if not course_id:
-            prRed(
-                'Please specify the course you want to add the student to using -c or --course_id'
-            )
-        if not student_id:
-            prRed(
-                'Please specify the student you want to add using -s or --student_id'
-            )
-        student = User(student_id, first_name, last_name, email)
-        add_student(course_id, student, gb)
-    elif command == 'add_students':
-        if not course_id:
-            prRed(
-                'Please specify the course you want to add the students to using -c or --course_id'
-            )
-        if not students_csv:
-            prRed(
-                'Please enter the path containing the students csv using --students_csv'
-            )
-        if not os.path.exists(students_csv):
-            prRed(
-                'The csv file you entered does not exist. Please enter a valid path using --students_csv'
-            )
-        add_students(course_id, students_csv, gb)
-    elif command == 'remove_student':
-        if not course_id:
-            prRed(
-                'Please specify which course you want to remove the student from using -c or --course_id'
-            )
-        if not student_id:
-            prRed(
-                'Please specify the student you want to remove from the course using -s or --student_id'
-            )
-        remove_student(course_id, student_id, gb, force)
-    elif command == 'add_instructor':
-        if not course_id:
-            prRed(
-                'Please specify the course you want to add the instructor to using -c or --course_id'
-            )
-        if not instructor_id:
-            prRed(
-                'Please specify the instructor you want to add using -i or --instructor_student'
-            )
-        instructor = User(instructor_id, first_name, last_name, email)
-        add_instructor(course_id, instructor)
-    elif command == 'remove_instructor':
-        if not course_id:
-            prRed(
-                'Please specify which course you want to remove the instructor from using -c or --course_id'
-            )
-        if not instructor_id:
-            prRed(
-                'Please specify the instructor you want to remove using -i or --instructor_id'
-            )
-        remove_instructor(course_id, instructor_id)
-
-    return True
 
 
 def main(argv=None):
 
-    argv = argv or sys.argv
-    parsed_args = parse_input(argv)
-    execute_command(parsed_args)
+    argv = argv or sys.argv[1:]
+    args = parse_args(argv)
+    args.func(args)
 
 
 if __name__ == '__main__':
