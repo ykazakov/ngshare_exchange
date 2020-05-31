@@ -54,6 +54,21 @@ class TestExchangeCollect(TestExchange):
         )
         self.requests_mocker.get(url, json=self._get_submission)
 
+    def _mock_requests_error_submission(self):
+        """
+        Mock's ngshare's GET submissions, which responds with the submissions,
+        and GET submission, which returns an error.
+        """
+        url = '{}/submissions/{}/{}'.format(
+            self.base_url, self.course_id, self.assignment_id
+        )
+        self.requests_mocker.get(url, json=self._get_submissions)
+
+        url = '{}/submission/{}/{}/{}'.format(
+            self.base_url, self.course_id, self.assignment_id, self.student_id
+        )
+        self.requests_mocker.get(url, status_code=404)
+
     def _mock_requests_subdir(self, subdirectory, subdirectory_file):
         """
         Mock's ngshare's GET submissions, which responds with the submission,
@@ -126,6 +141,7 @@ class TestExchangeCollect(TestExchange):
 
     def test_no_course_id(self):
         """Does collecting without a course id throw an error?"""
+        self.collect.coursedir.course_id = ''
         self._mock_requests_collect()
         with pytest.raises(ExchangeError):
             self.collect.start()
@@ -180,6 +196,17 @@ class TestExchangeCollect(TestExchange):
         with open(timestamp_path, 'r') as timestamp_file:
             assert timestamp_file.read() == '2002' + self.timestamp_template
 
+    def test_collect_update_already_updated(self):
+        self.num_submissions = 1
+        self._mock_requests_collect()
+        self.collect.start()
+        timestamp_path = self.submission_dir() / 'timestamp.txt'
+        mtime1 = os.path.getmtime(timestamp_path)
+        self.collect.update = True
+        self.collect.start()
+        mtime2 = os.path.getmtime(timestamp_path)
+        assert mtime1 == mtime2
+
     def test_collect_subdirectories(self):
         subdir = 'foo'
         subfile = 'temp.txt'
@@ -194,3 +221,8 @@ class TestExchangeCollect(TestExchange):
             / subdir
             / subfile
         ).is_file()
+
+    def test_collect_ngshare_error_submission(self):
+        self.num_submissions = 1
+        self._mock_requests_error_submission()
+        self.collect.start()
