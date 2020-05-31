@@ -121,6 +121,70 @@ class TestExchangeList(TestExchange):
     def _get_submissions(self, request: PreparedRequest, context):
         return self._get_student_submissions(request, context)
 
+    def _mock_error_assignment(self):
+        url = '{}/assignment/{}/{}'.format(
+            self.base_url, self.course_id, self.assignment_id
+        )
+        self.requests_mocker.get(url, status_code=404)
+        url = '{}/assignment/{}/{}'.format(
+            self.base_url, self.course_id2, self.assignment_id
+        )
+        self.requests_mocker.get(url, status_code=404)
+        url = '{}/assignment/{}/{}'.format(
+            self.base_url, self.course_id, self.assignment_id2
+        )
+        self.requests_mocker.get(url, status_code=404)
+        url = '{}/assignment/{}/{}'.format(
+            self.base_url, self.course_id2, self.assignment_id2
+        )
+        self.requests_mocker.get(url, status_code=404)
+
+    def _mock_error_assignments(self):
+        url = '{}/assignments/{}'.format(self.base_url, self.course_id)
+        self.requests_mocker.get(url, status_code=404)
+        url = '{}/assignments/{}'.format(self.base_url, self.course_id2)
+        self.requests_mocker.get(url, status_code=404)
+
+    def _mock_error_feedback(self):
+        url = '{}/feedback/{}/{}/{}'.format(
+            self.base_url, self.course_id, self.assignment_id, self.student_id
+        )
+        self.requests_mocker.get(url, status_code=404)
+        url = '{}/feedback/{}/{}/{}'.format(
+            self.base_url, self.course_id, self.assignment_id2, self.student_id
+        )
+        self.requests_mocker.get(url, status_code=404)
+
+    def _mock_error_submission(self):
+        url = '{}/submission/{}/{}/{}'.format(
+            self.base_url, self.course_id, self.assignment_id, self.student_id
+        )
+        self.requests_mocker.get(url, status_code=404)
+
+    def _mock_error_submissions(self):
+        url = '{}/submissions/{}/{}'.format(
+            self.base_url, self.course_id, self.assignment_id
+        )
+        self.requests_mocker.get(url, status_code=404)
+
+        url = '{}/submissions/{}/{}/{}'.format(
+            self.base_url, self.course_id, self.assignment_id, self.student_id
+        )
+        self.requests_mocker.get(url, status_code=404)
+
+    def _mock_error_unrelease(self):
+        url = '{}/assignment/{}/{}'.format(
+            self.base_url, self.course_id, self.assignment_id
+        )
+        self.requests_mocker.delete(url, status_code=404)
+
+    def _mock_no_notebook(self):
+        url = '{}/submission/{}/{}/{}'.format(
+            self.base_url, self.course_id, self.assignment_id, self.student_id
+        )
+        json = {'success': True, 'files': []}
+        self.requests_mocker.get(url, json=json)
+
     def _mock_requests_list(self):
         """
         Mocks ngshare's GET courses, GET assignments, GET assignment, DELETE
@@ -266,6 +330,22 @@ class TestExchangeList(TestExchange):
             self.list.start()
         except Exception as e:
             assert issubclass(type(e), ExchangeError)
+
+    def test_list_by_student_id_1(self):
+        self.num_courses = 2
+        self.num_assignments = 1
+        self.list.coursedir.course_id = self.course_id
+        self.list.coursedir.student_id = self.student_id
+        self.list.inbound = True
+        self.list.start()
+
+    def test_list_by_student_id_2(self):
+        self.num_courses = 2
+        self.num_assignments = 1
+        self.list.coursedir.course_id = self.course_id
+        self.list.coursedir.student_id = ''
+        self.list.inbound = True
+        self.list.start()
 
     def test_list_released_2x1_course1(self):
         self.num_courses = 2
@@ -427,6 +507,15 @@ class TestExchangeList(TestExchange):
             )
         )
 
+    def test_list_remove_inbound(self):
+        self.num_assignments = 2
+        self.list.coursedir.assignment_id = self.assignment_id
+        self.list.inbound = True
+        self.list.remove = True
+        self.list.start()
+        assert not self.test_failed
+        assert not self.test_completed
+
     def test_list_remove_outbound(self):
         self.num_assignments = 2
         self.list.coursedir.assignment_id = self.assignment_id
@@ -501,6 +590,33 @@ class TestExchangeList(TestExchange):
             )
         )
 
+    def test_list_inbound_no_notebooks(self):
+        self._mock_no_notebook()
+        self.num_assignments = 1
+        self.num_submissions = 1
+        self.list.coursedir.assignment_id = self.assignment_id
+        self.list.inbound = True
+        self.list.start()
+        assert (
+            self._read_log()
+            == dedent(
+                """
+            [WARNING] No notebooks found for assignment "{}" in course "{}"
+            [INFO] Submitted assignments:
+            [INFO] {} {} {} {} (no feedback available)
+            """
+            )
+            .lstrip()
+            .format(
+                self.assignment_id,
+                self.course_id,
+                self.course_id,
+                self.student_id,
+                self.assignment_id,
+                self.timestamp1,
+            )
+        )
+
     def test_list_cached_0(self):
         self.num_assignments = 1
         self.is_instructor = False
@@ -569,6 +685,19 @@ class TestExchangeList(TestExchange):
                 self.timestamp2,
             )
         )
+
+    def test_list_not_in_course(self):
+        tester = self
+
+        class DummyAuthenticator(Authenticator):
+            def get_student_courses(self, student_id):
+                return [tester.course_id2]
+
+        self.num_courses = 2
+        self.num_assignments = 1
+        self.list.coursedir.course_id = self.course_id
+        self.list.authenticator = DummyAuthenticator()
+        self.list.start()
 
     def test_list_remove_cached(self):
         self._submit()
@@ -988,3 +1117,65 @@ class TestExchangeList(TestExchange):
                 self.timestamp2,
             )
         )
+
+    def test_list_path_includes_course(self):
+        self.num_courses = 2
+        self.num_assignments = 1
+        self.list.coursedir.course_id = self.course_id
+        self.list.path_includes_course = True
+        self.list.start()
+
+    def test_list_ngshare_error_assignment(self):
+        self._mock_error_assignment()
+        self.num_courses = 1
+        self.num_assignments = 1
+        self.list.coursedir.course_id = self.course_id
+        self.list.start()
+
+    def test_list_ngshare_error_assignments(self):
+        self._mock_error_assignments()
+        self.num_courses = 1
+        self.num_assignments = 1
+        self.list.coursedir.course_id = self.course_id
+        self.list.start()
+
+    def test_list_ngshare_error_feedback_1(self):
+        self._mock_error_feedback()
+        self.num_assignments = 1
+        self.num_submissions = 1
+        self.list.coursedir.assignment_id = self.assignment_id
+        self.list.inbound = True
+        self.list.start()
+
+    def test_list_ngshare_error_feedback_2(self):
+        self._mock_error_feedback()
+        self.num_assignments = 1
+        self._submit()
+        self.is_instructor = False
+        self.list.cached = True
+        self.list.coursedir.assignment_id = self.assignment_id
+        self.list.start()
+
+    def test_list_ngshare_error_submission(self):
+        self._mock_error_submission()
+        self.num_assignments = 1
+        self.num_submissions = 1
+        self.list.coursedir.assignment_id = self.assignment_id
+        self.list.inbound = True
+        self.list.start()
+
+    def test_list_ngshare_error_submissions(self):
+        self._mock_error_submissions()
+        self.num_courses = 2
+        self.num_assignments = 1
+        self.list.coursedir.course_id = self.course_id
+        self.list.coursedir.student_id = self.student_id
+        self.list.inbound = True
+        self.list.start()
+
+    def test_list_ngshare_error_unrelease(self):
+        self._mock_error_unrelease()
+        self.num_assignments = 2
+        self.list.coursedir.assignment_id = self.assignment_id
+        self.list.remove = True
+        self.list.start()

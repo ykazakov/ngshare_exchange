@@ -169,7 +169,7 @@ class ExchangeList(Exchange, ABCExchangeList):
                 )
                 if feedback_checksums is None:
                     self.log.error('Failed to check for feedback.')
-                    feedback_checksums = []
+                    feedback_checksums = {}
                 notebooks = _merge_notebooks_feedback(
                     notebook_ids, feedback_checksums
                 )
@@ -353,16 +353,15 @@ class ExchangeList(Exchange, ABCExchangeList):
 
                 notebooks = sorted(assignment['notebooks'], key=nb_key)
             else:
-                notebooks = sorted(
-                    self._get_notebooks(
-                        info['course_id'], info['assignment_id']
-                    )
+                notebooks = self._get_notebooks(
+                    info['course_id'], info['assignment_id']
                 )
                 if notebooks is None:
                     self.log.error(
                         'Failed to get list of assignment ' 'notebooks.'
                     )
                     notebooks = []
+                notebooks = sorted(notebooks)
 
             if not notebooks:
                 self.log.warning(
@@ -456,6 +455,7 @@ class ExchangeList(Exchange, ABCExchangeList):
                 info['notebooks'].append(nb_info)
 
             if info['status'] == 'submitted':
+                assert not self.remove
                 if info['notebooks']:
                     has_local_feedback = all(
                         [nb['has_local_feedback'] for nb in info['notebooks']]
