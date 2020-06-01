@@ -25,13 +25,24 @@ class TestExchangeReleaseAssignment(TestExchange):
             return {'success': True, 'assignments': [self.assignment_id]}
         return {'success': True, 'assignments': []}
 
+    def _mock_error_release(self):
+        url = '{}/assignment/{}/{}'.format(
+            self.base_url, self.course_id, self.assignment_id
+        )
+        self.requests_mocker.post(url, status_code=404)
+
+    def _mock_error_unrelease(self):
+        url = '{}/assignment/{}/{}'.format(
+            self.base_url, self.course_id, self.assignment_id
+        )
+        self.requests_mocker.delete(url, status_code=404)
+
     def _mock_requests_release(self):
         '''
         Mocks ngshare's GET assignments, which responds with no assignments,
         and POST assignment, which verifies the request.
         '''
         url = '{}/assignments/{}'.format(self.base_url, self.course_id)
-        print(url)
         response = {'success': True, 'assignments': []}
         self.requests_mocker.get(url, json=response)
 
@@ -160,3 +171,79 @@ class TestExchangeReleaseAssignment(TestExchange):
         self.release_assignment.start()
         assert not self.test_failed
         assert self.test_completed
+
+    def test_release_old_config(self):
+        self.released = False
+        self._mock_requests_release()
+        old_load_config = ExchangeReleaseAssignment._load_config
+
+        def new_load_config(releaser, cfg):
+            cfg.ExchangeRelease.force = True
+            old_load_config(releaser, cfg)
+
+        ExchangeReleaseAssignment._load_config = new_load_config
+        self.release_assignment = self._new_release_assignment()
+        assert self.release_assignment.force
+        assert 'ExchangeRelease' not in self.release_assignment.config
+        self.release_assignment.start()
+
+        assert not self.test_failed
+        assert self.test_completed
+
+    def test_release_missing(self):
+        assignment_dir = self.course_dir / 'release' / self.assignment_id
+        nb_path = assignment_dir / (self.notebook_id + '.ipynb')
+        os.remove(nb_path)
+        os.rmdir(assignment_dir)
+
+        self.released = False
+        self._mock_requests_release()
+        try:
+            self.release_assignment.start()
+        except ExchangeError:
+            pass
+
+        assert not self.test_failed
+        assert not self.test_completed
+
+    def test_release_not_generated(self):
+        assignment_dir = self.course_dir / 'release' / self.assignment_id
+        nb_path = assignment_dir / (self.notebook_id + '.ipynb')
+        os.remove(nb_path)
+        os.rmdir(assignment_dir)
+
+        assignment_dir = self.course_dir / 'source' / self.assignment_id
+        assignment_dir.mkdir(parents=True)
+
+        self.released = False
+        self._mock_requests_release()
+        try:
+            self.release_assignment.start()
+        except ExchangeError:
+            pass
+
+        assert not self.test_failed
+        assert not self.test_completed
+
+    def test_release_ngshare_error_release(self):
+        self._mock_requests_release()
+        self._mock_error_release()
+        try:
+            self.release_assignment.start()
+        except ExchangeError:
+            pass
+
+        assert not self.test_failed
+        assert not self.test_completed
+
+    def test_release_ngshare_error_unrelease(self):
+        self._mock_requests_force_rerelease()
+        self._mock_error_unrelease()
+        self.released = True
+        try:
+            self.release_assignment.start()
+        except ExchangeError:
+            pass
+
+        assert not self.test_failed
+        assert not self.test_completed
