@@ -1,20 +1,12 @@
 #!/usr/bin/python
 import os
-import shutil
 import glob
+from pathlib import Path
 
 from nbgrader.exchange.abc import (
     ExchangeFetchFeedback as ABCExchangeFetchFeedback,
 )
 from .exchange import Exchange
-
-from nbgrader.utils import (
-    check_mode,
-    notebook_hash,
-    make_unique_key,
-    get_username,
-)
-from nbgrader.utils import parse_utc
 
 
 class ExchangeFetchFeedback(Exchange, ABCExchangeFetchFeedback):
@@ -22,21 +14,6 @@ class ExchangeFetchFeedback(Exchange, ABCExchangeFetchFeedback):
         if self.coursedir.course_id == '':
             self.fail('No course id specified. Re-run with --course flag.')
 
-        if self.coursedir.student_id != '*':
-
-            # An explicit student id has been specified on the command line; we use it as student_id
-            if (
-                '*' in self.coursedir.student_id
-                or '+' in self.coursedir.student_id
-            ):
-                self.fail(
-                    "The student ID should contain no '*' nor '+'; got {}".format(
-                        self.coursedir.student_id
-                    )
-                )
-            student_id = self.coursedir.student_id
-        else:
-            student_id = get_username()
         self.cache_path = os.path.join(self.cache, self.coursedir.course_id)
         assignment_id = (
             self.coursedir.assignment_id
@@ -71,7 +48,7 @@ class ExchangeFetchFeedback(Exchange, ABCExchangeFetchFeedback):
 
         # check if feedback folder exists
         if not os.path.exists(self.dest_path):
-            os.mkdir(self.dest_path)
+            Path(self.dest_path).mkdir(parents=True)
 
     def copy_files(self):
         self.log.info('Fetching feedback from server')
