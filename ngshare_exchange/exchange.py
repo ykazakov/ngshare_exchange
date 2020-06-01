@@ -4,6 +4,7 @@ import shutil
 import glob
 import requests
 import fnmatch
+from pathlib import Path
 
 from textwrap import dedent
 
@@ -140,7 +141,7 @@ class Exchange(ABCExchange):
         ),
     ).tag(config=True)
 
-    def decode_dir(self, src_dir, dest_dir, ignore=None):
+    def decode_dir(self, src_dir, dest_dir, ignore=None, noclobber=False):
         '''
        decode an encoded directory tree and saw the decoded files to des
        src_dir: en encoded directory tree
@@ -151,7 +152,7 @@ class Exchange(ABCExchange):
        '''
         # check if the destination directory exists
         if not os.path.exists(dest_dir):
-            os.mkdir(dest_dir)
+            Path(dest_dir).mkdir(parents=True)
 
         for src_file in src_dir:
             src_path = src_file['path']
@@ -160,6 +161,8 @@ class Exchange(ABCExchange):
             file_name = path_components[1]
 
             dest_path = os.path.join(dest_dir, file_name)
+            if noclobber and os.path.isfile(dest_path):
+                continue
             # the file could be in a subdirectory, check if directory exists
             if not os.path.exists(dir_name) and dir_name != '':
                 subdir = os.path.join(dest_dir, dir_name)
