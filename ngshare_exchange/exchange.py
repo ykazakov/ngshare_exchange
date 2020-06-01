@@ -194,7 +194,9 @@ class Exchange(ABCExchange):
                 # check if you have a subdir
                 sub_dir = subdir.split(os.sep)[-1]
                 if sub_dir != self.coursedir.assignment_id:
-                    file_path = sub_dir + os.sep + file_name
+                    file_path = os.path.join(
+                        os.path.relpath(subdir, src_dir), file_name
+                    )
                 else:
                     file_path = file_name
 
@@ -260,32 +262,6 @@ class Exchange(ABCExchange):
                 log=self.log,
             ),
         )
-        # copytree copies access mode too - so we must add go+rw back to it if
-        # we are in groupshared.
-        if self.coursedir.groupshared:
-            for dirname, _, filenames in os.walk(dest):
-                # dirs become ug+rwx
-                st_mode = os.stat(dirname).st_mode
-                if st_mode & 0o2770 != 0o2770:
-                    try:
-                        os.chmod(dirname, (st_mode | 0o2770) & 0o2777)
-                    except PermissionError:
-                        self.log.warning(
-                            "Could not update permissions of %s to make it groupshared",
-                            dirname,
-                        )
-
-                for filename in filenames:
-                    filename = os.path.join(dirname, filename)
-                    st_mode = os.stat(filename).st_mode
-                    if st_mode & 0o660 != 0o660:
-                        try:
-                            os.chmod(filename, (st_mode | 0o660) & 0o777)
-                        except PermissionError:
-                            self.log.warning(
-                                "Could not update permissions of %s to make it groupshared",
-                                filename,
-                            )
 
     def ignore_patterns(self):
         """
