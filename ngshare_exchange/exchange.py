@@ -103,7 +103,7 @@ class Exchange(ABCExchange):
             return None
         return self._ngshare_api_check_error(response, url)
 
-    def encode_url(self, url)
+    def encode_url(self, url):
         return quote(url, safe='/', encoding=None, errors=None)
 
     def ngshare_api_get(self, url, params=None):
@@ -112,7 +112,9 @@ class Exchange(ABCExchange):
 
     def ngshare_api_post(self, url, data, params=None):
         encoded_url = self.encode_url(url)
-        return self.ngshare_api_request('POST', encoded_url, data=data, params=params)
+        return self.ngshare_api_request(
+            'POST', encoded_url, data=data, params=params
+        )
 
     def ngshare_api_delete(self, url, params=None):
         encoded_url = self.encode_url(url)
