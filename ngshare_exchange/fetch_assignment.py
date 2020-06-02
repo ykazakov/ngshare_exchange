@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import os
+from urllib.parse import quote
 
 from nbgrader.exchange.abc import (
     ExchangeFetchAssignment as ABCExchangeFetchAssignment,
@@ -33,9 +34,11 @@ class ExchangeFetchAssignment(Exchange, ABCExchangeFetchAssignment):
         ):
             self.fail('You do not have access to this course.')
 
-        self.src_path = '/assignment/{}/{}'.format(
+        
+        url = '/assignment/{}/{}'.format(
             self.coursedir.course_id, self.coursedir.assignment_id
         )
+        self.src_path = quote(url, safe='/', encoding=None, errors=None)
 
     def init_dest(self):
         if self.path_includes_course:
