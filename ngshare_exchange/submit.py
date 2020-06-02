@@ -44,6 +44,11 @@ class ExchangeSubmit(Exchange, ABCExchangeSubmit):
             self.fail('No course id specified. Re-run with --course flag.')
 
         self.cache_path = os.path.join(self.cache, self.coursedir.course_id)
+        if self.coursedir.student_id != '*':
+            self.fail(
+                'Submitting assignments with an explicit student ID is '
+                'not possible with ngshare.'
+            )
 
     def check_filename_diff(self):
         released_notebooks = self._get_assignment_notebooks(
