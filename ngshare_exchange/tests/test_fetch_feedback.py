@@ -75,10 +75,7 @@ class TestExchangeFetchFeedback(TestExchange):
             ExchangeFetchFeedback, course_id, assignment_id, student_id
         )
 
-        class DummyAuthenticator(Authenticator):
-            pass
-
-        retvalue.authenticator = DummyAuthenticator()
+        retvalue.authenticator = Authenticator()
         retvalue.assignment_dir = str(self.course_dir.absolute())
         return retvalue
 
