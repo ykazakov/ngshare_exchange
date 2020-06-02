@@ -6,6 +6,7 @@ import requests
 import fnmatch
 from pathlib import Path
 from urllib.parse import quote
+from rapidfuzz import fuzz
 
 from textwrap import dedent
 
@@ -238,20 +239,12 @@ class Exchange(ABCExchange):
         return super(Exchange, self).start()
 
     def _assignment_not_found(self, src_path, other_path):
-        msg = 'Assignment not found at: {}'.format(src_path)
+        msg = "Assignment not found at: {}".format(src_path)
         self.log.fatal(msg)
         found = glob.glob(other_path)
         if found:
-
-            # Normally it is a bad idea to put imports in the middle of
-            # a function, but we do this here because otherwise fuzzywuzzy
-            # prints an annoying message about python-Levenshtein every
-            # time nbgrader is run.
-
-            from fuzzywuzzy import fuzz
-
             scores = sorted([(fuzz.ratio(self.src_path, x), x) for x in found])
-            self.log.error('Did you mean: %s', scores[-1][1])
+            self.log.error("Did you mean: %s", scores[-1][1])
 
         raise ExchangeError(msg)
 
