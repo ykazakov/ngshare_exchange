@@ -39,7 +39,7 @@ setuptools.setup(
     ],
     python_requires='>=3.6',
     install_requires=[
-        'fuzzywuzzy',
+        'rapidfuzz',
         'traitlets',
         'jupyter_core',
         #'nbgrader>=0.7.0',  # unfortunately not out yet?
