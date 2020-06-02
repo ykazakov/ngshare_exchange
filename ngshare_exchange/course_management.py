@@ -51,7 +51,7 @@ def ngshare_url():
             return _ngshare_url
         except Exception as e:
             prRed(
-                "Cannot determine ngshare URL. Please check your nbgrader_config.py!",
+                'Cannot determine ngshare URL. Please check your nbgrader_config.py!',
                 False,
             )
             prRed(e)

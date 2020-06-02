@@ -47,7 +47,7 @@ class ExchangeReleaseAssignment(Exchange, ABCExchangeReleaseAssignment):
 
                 # Looks like the instructor forgot to assign
                 self.fail(
-                    "Assignment found in '{}' but not '{}', run `nbgrader generate_assignment` first.".format(
+                    'Assignment found in "{}" but not "{}", run `nbgrader generate_assignment` first.'.format(
                         source, self.src_path
                     )
                 )
@@ -61,7 +61,7 @@ class ExchangeReleaseAssignment(Exchange, ABCExchangeReleaseAssignment):
 
     def init_dest(self):
         if self.coursedir.course_id == '':
-            self.fail("No course id specified. Re-run with --course flag.")
+            self.fail('No course id specified. Re-run with --course flag.')
         self.dest_path = '/assignment/{}/{}'.format(
             self.coursedir.course_id, self.coursedir.assignment_id
         )
@@ -81,7 +81,7 @@ class ExchangeReleaseAssignment(Exchange, ABCExchangeReleaseAssignment):
         if self.coursedir.assignment_id in response['assignments']:
             if self.force:
                 self.log.info(
-                    "Overwriting files: {} {}".format(
+                    'Overwriting files: {} {}'.format(
                         self.coursedir.course_id, self.coursedir.assignment_id
                     )
                 )

@@ -1,6 +1,5 @@
 #!/usr/bin/python
 import os
-from urllib.parse import quote
 
 from nbgrader.exchange.abc import (
     ExchangeFetchAssignment as ABCExchangeFetchAssignment,
@@ -34,10 +33,9 @@ class ExchangeFetchAssignment(Exchange, ABCExchangeFetchAssignment):
         ):
             self.fail('You do not have access to this course.')
 
-        url = '/assignment/{}/{}'.format(
+        self.src_path = '/assignment/{}/{}'.format(
             self.coursedir.course_id, self.coursedir.assignment_id
         )
-        self.src_path = quote(url, safe='/', encoding=None, errors=None)
 
     def init_dest(self):
         if self.path_includes_course:
@@ -57,7 +55,7 @@ class ExchangeFetchAssignment(Exchange, ABCExchangeFetchAssignment):
             )
 
     def do_copy(self, files):
-        """Copy the src dir to the dest dir omitting the self.coursedir.ignore globs."""
+        '''Copy the src dir to the dest dir omitting the self.coursedir.ignore globs.'''
         if os.path.isdir(self.dest_path):
             self.decode_dir(
                 files,
