@@ -69,15 +69,18 @@ class ExchangeReleaseFeedback(Exchange, ABCExchangeReleaseFeedback):
                 timestamp = timestamp_file.read()
 
             if student_id not in staged_feedback.keys():
-                staged_feedback[student_id] = {}  # Maps timestamp to feedback.
+                # Maps timestamp to feedback.
+                staged_feedback[student_id] = {}
             if timestamp not in staged_feedback[student_id].keys():
-                staged_feedback[student_id][timestamp] = []  # List of info.
+                # List of info.
+                staged_feedback[student_id][timestamp] = []
             staged_feedback[student_id][timestamp].append(
                 {'notebook_id': notebook_id, 'path': html_file}
             )
-
-        for student_id, submission in staged_feedback.items():  # Student.
-            for timestamp, feedback_info in submission.items():  # Submission.
+        # Student.
+        for student_id, submission in staged_feedback.items():
+            # Submission.
+            for timestamp, feedback_info in submission.items():
                 self.log.info(
                     'Releasing feedback for student "{}" on '
                     'assignment "{}/{}/{}" ({})'.format(
