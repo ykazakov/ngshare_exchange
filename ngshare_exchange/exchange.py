@@ -5,6 +5,7 @@ import glob
 import requests
 import fnmatch
 from pathlib import Path
+from urllib.parse import quote
 
 from textwrap import dedent
 
@@ -36,6 +37,7 @@ class Exchange(ABCExchange):
 
     @property
     def ngshare_url(self):
+
         if self._ngshare_url:
             return self._ngshare_url
         if 'PROXY_PUBLIC_SERVICE_HOST' in os.environ:
@@ -101,14 +103,20 @@ class Exchange(ABCExchange):
             return None
         return self._ngshare_api_check_error(response, url)
 
+    def encode_url(self, url)
+        return quote(url, safe='/', encoding=None, errors=None)
+
     def ngshare_api_get(self, url, params=None):
-        return self.ngshare_api_request('GET', url, params=params)
+        encoded_url = self.encode_url(url)
+        return self.ngshare_api_request('GET', encoded_url, params=params)
 
     def ngshare_api_post(self, url, data, params=None):
-        return self.ngshare_api_request('POST', url, data=data, params=params)
+        encoded_url = self.encode_url(url)
+        return self.ngshare_api_request('POST', encoded_url, data=data, params=params)
 
     def ngshare_api_delete(self, url, params=None):
-        return self.ngshare_api_request('DELETE', url, params=params)
+        encoded_url = self.encode_url(url)
+        return self.ngshare_api_request('DELETE', encoded_url, params=params)
 
     assignment_dir = Unicode(
         '.',
