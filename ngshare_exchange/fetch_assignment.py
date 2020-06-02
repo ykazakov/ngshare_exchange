@@ -34,7 +34,6 @@ class ExchangeFetchAssignment(Exchange, ABCExchangeFetchAssignment):
         ):
             self.fail('You do not have access to this course.')
 
-        
         url = '/assignment/{}/{}'.format(
             self.coursedir.course_id, self.coursedir.assignment_id
         )
