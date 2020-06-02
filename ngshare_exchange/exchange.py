@@ -82,6 +82,7 @@ class Exchange(ABCExchange):
         return response
 
     def ngshare_api_request(self, method, url, data=None, params=None):
+        encoded_url = self.encode_url(url)
         try:
             headers = None
             if 'JUPYTERHUB_API_TOKEN' in os.environ:
@@ -91,7 +92,7 @@ class Exchange(ABCExchange):
                 }
             response = requests.request(
                 method,
-                self.ngshare_url + url,
+                self.ngshare_url + encoded_url,
                 headers=headers,
                 data=data,
                 params=params,
@@ -108,18 +109,13 @@ class Exchange(ABCExchange):
         return quote(url, safe='/', encoding=None, errors=None)
 
     def ngshare_api_get(self, url, params=None):
-        encoded_url = self.encode_url(url)
-        return self.ngshare_api_request('GET', encoded_url, params=params)
+        return self.ngshare_api_request('GET', url, params=params)
 
     def ngshare_api_post(self, url, data, params=None):
-        encoded_url = self.encode_url(url)
-        return self.ngshare_api_request(
-            'POST', encoded_url, data=data, params=params
-        )
+        return self.ngshare_api_request('POST', url, data=data, params=params)
 
     def ngshare_api_delete(self, url, params=None):
-        encoded_url = self.encode_url(url)
-        return self.ngshare_api_request('DELETE', encoded_url, params=params)
+        return self.ngshare_api_request('DELETE', url, params=params)
 
     assignment_dir = Unicode(
         '.',

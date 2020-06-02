@@ -5,6 +5,7 @@ import csv
 import subprocess
 import json
 import argparse
+from urllib.parse import quote
 
 # https://www.geeksforgeeks.org/print-colors-python-terminal/
 def prRed(skk, exit=True):
@@ -86,11 +87,16 @@ def check_message(response):
     return response
 
 
+def encode_url(url):
+    return quote(url, safe='/', encoding=None, errors=None)
+
+
 def post(url, data):
     header = get_header()
+    encoded_url = encode_url(url)
 
     try:
-        response = requests.post(url, data=data, headers=header)
+        response = requests.post(encoded_url, data=data, headers=header)
         response.raise_for_status()
     except requests.exceptions.ConnectionError:
         prRed('Could not establish connection to ngshare server')
@@ -102,9 +108,9 @@ def post(url, data):
 
 def delete(url, data):
     header = get_header()
-
+    encoded_url = encode_url(url)
     try:
-        response = requests.delete(url, data=data, headers=header)
+        response = requests.delete(encoded_url, data=data, headers=header)
         response.raise_for_status()
     except requests.exceptions.ConnectionError:
         prRed('Could not establish connection to ngshare server')
