@@ -307,9 +307,9 @@ class TestCourseManagement:
         with tempfile.NamedTemporaryFile() as f:
             f.writelines(
                 [
-                    b"student_id,first_name,last_name,email\n",
-                    b"sid1,jane,doe,jd@mail.com\n",
-                    b"sid2,john,perez,jp@mail.com\n",
+                    b'student_id,first_name,last_name,email\n',
+                    b'sid1,jane,doe,jd@mail.com\n',
+                    b'sid2,john,perez,jp@mail.com\n',
                 ]
             )
             f.flush()
@@ -376,9 +376,9 @@ class TestCourseManagement:
         with tempfile.NamedTemporaryFile() as f:
             f.writelines(
                 [
-                    b"student_id,first_name,last_name,email\n",
-                    b"sid1,jane,doe,jd@mail.com\n",
-                    b"sid2,john,perez,jp@mail.com\n",
+                    b'student_id,first_name,last_name,email\n',
+                    b'sid1,jane,doe,jd@mail.com\n',
+                    b'sid2,john,perez,jp@mail.com\n',
                 ]
             )
             f.flush()
@@ -526,9 +526,9 @@ class TestCourseManagement:
         self._mock_add_students()
         with tempfile.NamedTemporaryFile() as f:
             f.write(b'student_id,first_name,last_name,email\n')
-            f.write(b"sid1,jane,doe,jd@mail.com\n")
+            f.write(b'sid1,jane,doe,jd@mail.com\n')
             f.write(b',jane,doe,jd@mail.com\n')
-            f.write(b"sid2,john,perez,jp@mail.com\n")
+            f.write(b'sid2,john,perez,jp@mail.com\n')
             f.flush()
 
             cm.main(['add_students', self.course_id, f.name, '--no-gb'])

@@ -455,7 +455,6 @@ class ExchangeList(Exchange, ABCExchangeList):
                 info['notebooks'].append(nb_info)
 
             if info['status'] == 'submitted':
-                assert not self.remove
                 if info['notebooks']:
                     has_local_feedback = all(
                         [nb['has_local_feedback'] for nb in info['notebooks']]
