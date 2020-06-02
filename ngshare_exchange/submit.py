@@ -1,10 +1,8 @@
-import base64
 import os
-import json
 
 from nbgrader.exchange.abc import ExchangeSubmit as ABCExchangeSubmit
 from .exchange import Exchange
-from nbgrader.utils import find_all_notebooks, parse_utc
+from nbgrader.utils import find_all_notebooks
 
 
 class ExchangeSubmit(Exchange, ABCExchangeSubmit):
@@ -46,13 +44,6 @@ class ExchangeSubmit(Exchange, ABCExchangeSubmit):
             self.fail('No course id specified. Re-run with --course flag.')
 
         self.cache_path = os.path.join(self.cache, self.coursedir.course_id)
-        if self.coursedir.student_id != '*':
-            self.fail(
-                'Submitting assignments with an explicit student ID is '
-                'not possible with ngshare.'
-            )
-        else:
-            student_id = self.username
 
     def check_filename_diff(self):
         released_notebooks = self._get_assignment_notebooks(

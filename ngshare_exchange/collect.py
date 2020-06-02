@@ -1,6 +1,5 @@
 import os
 import shutil
-import sys
 from collections import defaultdict
 import base64
 

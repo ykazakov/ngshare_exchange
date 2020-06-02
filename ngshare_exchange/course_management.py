@@ -1,10 +1,7 @@
 import os
 import sys
-import getopt
 import requests
 import csv
-import pwd
-import grp
 import subprocess
 import json
 import argparse
