@@ -108,7 +108,9 @@ def delete(url, data):
 
     try:
         response = requests.delete(url, data=data, headers=header)
-        response.raise_for_status
+        response.raise_for_status()
+    except requests.exceptions.ConnectionError:
+        prRed('Could not establish connection to ngshare server')
     except Exception:
         check_status_code(response)
 
@@ -190,7 +192,9 @@ def add_students(args):
             student_dict = {}
             student_id = row[cols_dict['student_id']]
             if len(student_id.replace(' ', '')) == 0:
-                prRed('Student ID cannot be empty (row {})'.format(i + 1))
+                prRed(
+                    'Student ID cannot be empty (row {})'.format(i + 1), False
+                )
                 continue
             first_name = row[cols_dict['first_name']]
             last_name = row[cols_dict['last_name']]
@@ -225,7 +229,7 @@ def add_students(args):
             else:
                 prRed(
                     'There was an error adding {} to {}: {}'.format(
-                        user, course_id, s['message']
+                        user, args.course_id, s['message']
                     ),
                     False,
                 )

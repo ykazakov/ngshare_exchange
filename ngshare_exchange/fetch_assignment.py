@@ -1,14 +1,10 @@
 #!/usr/bin/python
 import os
-import shutil
-
-from traitlets import Bool
 
 from nbgrader.exchange.abc import (
     ExchangeFetchAssignment as ABCExchangeFetchAssignment,
 )
 from .exchange import Exchange
-from nbgrader.utils import check_mode
 
 
 class ExchangeFetchAssignment(Exchange, ABCExchangeFetchAssignment):
@@ -25,7 +21,7 @@ class ExchangeFetchAssignment(Exchange, ABCExchangeFetchAssignment):
             )
 
             cfg.ExchangeFetchAssignment.merge(cfg.ExchangeFetch)
-            del cfg.ExchangeFetchAssignment
+            del cfg.ExchangeFetch
 
         super(ExchangeFetchAssignment, self)._load_config(cfg, **kwargs)
 
@@ -61,9 +57,11 @@ class ExchangeFetchAssignment(Exchange, ABCExchangeFetchAssignment):
     def do_copy(self, files):
         """Copy the src dir to the dest dir omitting the self.coursedir.ignore globs."""
         if os.path.isdir(self.dest_path):
-            self.coursedir.ignore = True
             self.decode_dir(
-                files, self.dest_path, ignore=self.ignore_patterns()
+                files,
+                self.dest_path,
+                ignore=self.ignore_patterns(),
+                noclobber=True,
             )
         else:
             self.decode_dir(files, self.dest_path)
@@ -85,4 +83,4 @@ class ExchangeFetchAssignment(Exchange, ABCExchangeFetchAssignment):
             try:
                 self.do_copy(response['files'])
             except:
-                self.log.warning('Could not decode the assignment')
+                self.fail('Could not decode the assignment')

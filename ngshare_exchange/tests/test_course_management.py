@@ -1,6 +1,8 @@
-import base64
 import os
+from pathlib import Path
+from shutil import copyfile
 
+from nbgrader.api import Gradebook
 import pytest
 import re
 from logging import getLogger
@@ -11,7 +13,6 @@ from requests_mock import Mocker
 import urllib
 import tempfile
 from .. import course_management as cm
-from io import StringIO
 
 
 def remove_color(s):
@@ -49,6 +50,15 @@ class TestCourseManagement:
         requests_mock.register_uri(
             rq_mock.ANY, rq_mock.ANY, text=self._mock_all
         )
+        cm._ngshare_url = NGSHARE_URL
+
+    def _add_gradebook(self, path):
+        gb_path = Path(__file__).parent / 'files' / 'gradebook.db'
+        copyfile(gb_path, Path(path) / 'gradebook.db')
+
+    def _add_empty_gradebook(self, path):
+        gb_path = Path(__file__).parent / 'files' / 'empty_gradebook.db'
+        copyfile(gb_path, Path(path) / 'gradebook.db')
 
     def _mock_all(self, request: PreparedRequest, content):
         getLogger().fatal(
@@ -70,6 +80,19 @@ class TestCourseManagement:
         else:
             return {'success': True}
 
+    def _get_user_info_unsuccessful(self, request: PreparedRequest, context):
+        request = parse_body(request.body)
+        if 'first_name' not in request:
+            return {'success': False, 'message': 'Please supply first name'}
+        elif 'last_name' not in request:
+            return {'success': False, 'message': 'Please supply last name'}
+        elif 'email' not in request:
+            return {'success': False, 'message': 'Please supply email'}
+        elif request['user'] != self.instructor:
+            return {'success': False, 'message': 'Permission denied'}
+        else:
+            return {'success': False, 'message': '¯\\_O_/¯'}
+
     def _get_students_info(self, request: PreparedRequest, context):
         request = parse_body(request.body)
         students = eval(request['students'])
@@ -82,6 +105,30 @@ class TestCourseManagement:
                 'success': True,
                 'status': [
                     {'username': 'sid1', 'success': True},
+                    {'username': 'sid2', 'success': True},
+                ],
+            }
+        else:
+            return {'success': False, 'message': 'wrong students passed in'}
+
+    def _get_students_info_unsuccessful(
+        self, request: PreparedRequest, context
+    ):
+        request = parse_body(request.body)
+        students = eval(request['students'])
+
+        if (
+            'sid1' == students[0]['username']
+            and 'sid2' == students[1]['username']
+        ):
+            return {
+                'success': True,
+                'status': [
+                    {
+                        'username': 'sid1',
+                        'success': False,
+                        'message': '¯\\_O_/¯',
+                    },
                     {'username': 'sid2', 'success': True},
                 ],
             }
@@ -122,9 +169,21 @@ class TestCourseManagement:
         )
         self.requests_mocker.post(url, json=self._get_user_info)
 
+    def _mock_add_student_unsuccessful(self):
+        url = '{}/student/{}/{}'.format(
+            NGSHARE_URL, self.course_id, self.student_id
+        )
+        self.requests_mocker.post(url, json=self._get_user_info_unsuccessful)
+
     def _mock_add_students(self):
         url = '{}/students/{}'.format(NGSHARE_URL, self.course_id)
         self.requests_mocker.post(url, json=self._get_students_info)
+
+    def _mock_add_students_unsuccessful(self):
+        url = '{}/students/{}'.format(NGSHARE_URL, self.course_id)
+        self.requests_mocker.post(
+            url, json=self._get_students_info_unsuccessful
+        )
 
     def _mock_add_instructor(self):
         url = '{}/instructor/{}/{}'.format(
@@ -196,6 +255,85 @@ class TestCourseManagement:
         out, err = capsys.readouterr()
         assert 'Successfully added/updated {}'.format(self.student_id) in out
 
+    def test_add_student_db(self, capsys, tmpdir_factory):
+        tmp_dir = tmpdir_factory.mktemp(self.course_id)
+        os.chdir(tmp_dir)
+        self._add_empty_gradebook(tmp_dir)
+        self._mock_add_student()
+        cm.main(
+            [
+                'add_student',
+                self.course_id,
+                self.student_id,
+                '-f',
+                'jane',
+                '-l',
+                'doe',
+                '-e' 'jd@mail.com',
+            ]
+        )
+        gb = Gradebook('sqlite:///gradebook.db', course_id=self.course_id)
+        students = gb.students
+        assert len(students) == 1
+        student = students[0]
+        assert student.first_name == 'jane'
+        assert student.last_name == 'doe'
+        assert student.email == 'jd@mail.com'
+
+    def test_add_student_unsuccessful(self, capsys):
+        self._mock_add_student_unsuccessful()
+        with pytest.raises(SystemExit) as se:
+            cm.main(
+                [
+                    'add_student',
+                    self.course_id,
+                    self.student_id,
+                    '-f',
+                    'jane',
+                    '-l',
+                    'doe',
+                    '-e' 'jd@mail.com',
+                    '--no-gb',
+                ]
+            )
+        assert se.type == SystemExit
+        assert se.value.code == -1
+
+    def test_add_students_db(self, capsys, tmpdir_factory):
+        tmp_dir = tmpdir_factory.mktemp(self.course_id)
+        os.chdir(tmp_dir)
+        self._add_empty_gradebook(tmp_dir)
+        self._mock_add_students()
+        with tempfile.NamedTemporaryFile() as f:
+            f.writelines(
+                [
+                    b'student_id,first_name,last_name,email\n',
+                    b'sid1,jane,doe,jd@mail.com\n',
+                    b'sid2,john,perez,jp@mail.com\n',
+                ]
+            )
+            f.flush()
+            cm.main(['add_students', self.course_id, f.name])
+        out, err = capsys.readouterr()
+        assert 'sid1 was sucessfuly added to math101' in out
+        assert 'sid2 was sucessfuly added to math101' in out
+
+        gb = Gradebook('sqlite:///gradebook.db', course_id=self.course_id)
+        students = gb.students
+        assert len(students) == 2
+        student_dict = {
+            'sid1': {'f_name': 'jane', 'l_name': 'doe', 'email': 'jd@mail.com'},
+            'sid2': {
+                'f_name': 'john',
+                'l_name': 'perez',
+                'email': 'jp@mail.com',
+            },
+        }
+        for student in students:
+            assert student.first_name == student_dict[student.id]['f_name']
+            assert student.last_name == student_dict[student.id]['l_name']
+            assert student.email == student_dict[student.id]['email']
+
     def test_add_students(self, capsys, tmp_path):
         self._mock_add_students()
         # test no course id
@@ -231,6 +369,22 @@ class TestCourseManagement:
             cm.main(['add_students', self.course_id, f.name, '--no-gb'])
         out, err = capsys.readouterr()
         assert 'sid1 was sucessfuly added to math101' in out
+        assert 'sid2 was sucessfuly added to math101' in out
+
+    def test_add_students_unsuccessful(self, capsys, tmp_path):
+        self._mock_add_students_unsuccessful()
+        with tempfile.NamedTemporaryFile() as f:
+            f.writelines(
+                [
+                    b'student_id,first_name,last_name,email\n',
+                    b'sid1,jane,doe,jd@mail.com\n',
+                    b'sid2,john,perez,jp@mail.com\n',
+                ]
+            )
+            f.flush()
+            cm.main(['add_students', self.course_id, f.name, '--no-gb'])
+        out, err = capsys.readouterr()
+        assert 'There was an error adding sid1 to math101: ' in out
         assert 'sid2 was sucessfuly added to math101' in out
 
     def test_add_instructor(self, capsys):
@@ -295,6 +449,31 @@ class TestCourseManagement:
             in out
         )
 
+    def test_remove_student_db(self, tmpdir_factory):
+        self._mock_remove_student()
+        tmp_dir = tmpdir_factory.mktemp(self.course_id)
+        os.chdir(tmp_dir)
+        self._add_empty_gradebook(tmp_dir)
+        gb = Gradebook('sqlite:///gradebook.db', course_id=self.course_id)
+        gb.add_student(self.student_id)
+
+        # test valid
+        cm.main(['remove_students', self.course_id, self.student_id])
+        assert len(gb.students) == 0
+
+    def test_remove_student_db_force(self, tmpdir_factory):
+        self._mock_remove_student()
+        tmp_dir = tmpdir_factory.mktemp(self.course_id)
+        os.chdir(tmp_dir)
+        self._add_gradebook(tmp_dir)
+        gb = Gradebook('sqlite:///gradebook.db', course_id=self.course_id)
+
+        # test valid
+        cm.main(['remove_students', self.course_id, self.student_id])
+        assert len(gb.students) == 1
+        cm.main(['remove_students', self.course_id, self.student_id, '--force'])
+        assert len(gb.students) == 0
+
     def test_remove_instructor(self, capsys):
         self._mock_remove_instructor()
 
@@ -344,14 +523,139 @@ class TestCourseManagement:
                 'Missing column {} in {}.'.format('student_id', f.name) in out
             )
 
+        self._mock_add_students()
         with tempfile.NamedTemporaryFile() as f:
             f.write(b'student_id,first_name,last_name,email\n')
-            f.write(b',jane,doe,jd@mail.com')
+            f.write(b'sid1,jane,doe,jd@mail.com\n')
+            f.write(b',jane,doe,jd@mail.com\n')
+            f.write(b'sid2,john,perez,jp@mail.com\n')
             f.flush()
 
-            with pytest.raises(SystemExit) as se:
-                cm.main(['add_students', self.course_id, f.name, '--no-gb'])
-            assert se.type == SystemExit
-            assert se.value.code == -1
+            cm.main(['add_students', self.course_id, f.name, '--no-gb'])
             out, err = capsys.readouterr()
-            assert 'Student ID cannot be empty (row 1)' in out
+            assert 'sid1 was sucessfuly added to math101' in out
+            assert 'Student ID cannot be empty (row 2)' in out
+            assert 'sid2 was sucessfuly added to math101' in out
+
+    def test_get_username(self):
+        jhu = 'JUPYTERHUB_USER'
+        if jhu in os.environ:
+            del os.environ[jhu]
+        assert os.environ['USER'] == cm.get_username()
+        os.environ[jhu] = 'jh_username'
+        username1 = cm.get_username()
+        username2 = os.environ[jhu]
+        del os.environ[jhu]
+        assert username1 == username2
+
+    def test_no_ngshare_url(self, tmpdir_factory):
+        url = 'http://ngshare.url'
+        tmp_dir = tmpdir_factory.mktemp(self.course_id)
+        os.chdir(tmp_dir)
+        config_file = Path(tmp_dir) / 'nbgrader_config.py'
+        config = '\n'.join(
+            [
+                'from ngshare_exchange import configureExchange',
+                'c=get_config()',
+                'configureExchange(c)',
+                'c.ExchangeFactory.exchange._ngshare_url = "{}"',
+            ]
+        ).format(url)
+        config_file.write_text(config)
+        del cm._ngshare_url
+        assert url == cm.ngshare_url()
+
+    def test_no_ngshare_url_no_config(self, tmpdir_factory):
+        tmp_dir = tmpdir_factory.mktemp(self.course_id)
+        os.chdir(tmp_dir)
+        del cm._ngshare_url
+        with pytest.raises(SystemExit):
+            cm.ngshare_url()
+
+    def test_headers_delete(self):
+        token = 'unique_token'
+        os.environ['JUPYTERHUB_API_TOKEN'] = token
+        self.called = False
+
+        def json(request: PreparedRequest, context):
+            self.called = True
+            assert 'Authorization' in request.headers
+            assert request.headers['Authorization'] == 'token ' + token
+            return self._get_user(request, context)
+
+        url = '{}/student/{}/{}'.format(
+            NGSHARE_URL, self.course_id, self.student_id
+        )
+        self.requests_mocker.delete(url, json=json)
+        cm.main(['remove_students', self.course_id, self.student_id, '--no-gb'])
+        assert self.called
+        del self.called
+
+    def test_headers_post(self):
+        token = 'unique_token'
+        os.environ['JUPYTERHUB_API_TOKEN'] = token
+        self.called = False
+
+        def json(request: PreparedRequest, context):
+            self.called = True
+            assert 'Authorization' in request.headers
+            assert request.headers['Authorization'] == 'token ' + token
+            return self._get_instructors_info(request, context)
+
+        url = '{}/course/{}'.format(NGSHARE_URL, self.course_id)
+        self.requests_mocker.post(url, json=json)
+        cm.main(['create_course', self.course_id] + self.instructors)
+        assert self.called
+        del self.called
+
+    def test_connection_error_delete(self):
+        url = '{}/student/{}/{}'.format(
+            NGSHARE_URL, self.course_id, self.student_id
+        )
+        self.requests_mocker.delete(
+            url, exc=requests.exceptions.ConnectionError
+        )
+        with pytest.raises(SystemExit):
+            cm.main(
+                ['remove_students', self.course_id, self.student_id, '--no-gb']
+            )
+
+    def test_connection_error_post(self):
+        url = '{}/course/{}'.format(NGSHARE_URL, self.course_id)
+        self.requests_mocker.post(url, exc=requests.exceptions.ConnectionError)
+        with pytest.raises(SystemExit):
+            cm.main(['create_course', self.course_id] + self.instructors)
+
+    def test_ngshare_bad_status_404_delete(self):
+        json = {'success': False, 'message': 'Something happened :('}
+        url = '{}/student/{}/{}'.format(
+            NGSHARE_URL, self.course_id, self.student_id
+        )
+        self.requests_mocker.delete(url, status_code=404, json=json)
+        with pytest.raises(SystemExit):
+            cm.main(
+                ['remove_students', self.course_id, self.student_id, '--no-gb']
+            )
+
+    def test_ngshare_bad_status_404_post(self):
+        json = {'success': False, 'message': 'Something happened :('}
+        url = '{}/course/{}'.format(NGSHARE_URL, self.course_id)
+        self.requests_mocker.post(url, status_code=404, json=json)
+        with pytest.raises(SystemExit):
+            cm.main(['create_course', self.course_id] + self.instructors)
+
+    def test_ngshare_bad_status_500_delete(self):
+        url = '{}/student/{}/{}'.format(
+            NGSHARE_URL, self.course_id, self.student_id
+        )
+        self.requests_mocker.delete(url, status_code=500)
+        with pytest.raises(SystemExit):
+            cm.main(
+                ['remove_students', self.course_id, self.student_id, '--no-gb']
+            )
+
+    def test_ngshare_bad_status_500_post(self):
+        url = '{}/course/{}'.format(NGSHARE_URL, self.course_id)
+        self.requests_mocker.post(url, status_code=500)
+        with pytest.raises(SystemExit):
+            cm.main(['create_course', self.course_id] + self.instructors)

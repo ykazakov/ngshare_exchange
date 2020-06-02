@@ -15,6 +15,24 @@ class TestExchangeFetchFeedback(TestExchange):
 
     timestamp = 'some_timestamp'
 
+    def _mock_bad_feedback(self):
+        '''
+        Mock's ngshare's GET feedback, which responds with a bad response.
+        '''
+
+        url = '{}/feedback/{}/{}/{}'.format(
+            self.base_url, self.course_id, self.assignment_id, self.student_id
+        )
+
+        files = [{'path': self.notebook_id + '.html'}]
+
+        response = {
+            'success': True,
+            'timestamp': self.timestamp,
+            'files': files,
+        }
+        self.requests_mocker.get(url, json=response)
+
     def _mock_requests_fetch(self):
         '''
         Mock's ngshare's GET feedback, which responds with the feedback file.
@@ -57,11 +75,7 @@ class TestExchangeFetchFeedback(TestExchange):
             ExchangeFetchFeedback, course_id, assignment_id, student_id
         )
 
-        class DummyAuthenticator(Authenticator):
-            def has_access(self, student_id, course_id):
-                return True
-
-        retvalue.authenticator = DummyAuthenticator()
+        retvalue.authenticator = Authenticator()
         retvalue.assignment_dir = str(self.course_dir.absolute())
         return retvalue
 
@@ -73,22 +87,35 @@ class TestExchangeFetchFeedback(TestExchange):
         self._mock_requests_fetch()
 
     def test_404(self):
+        submission_name = '{}+{}+{}'.format(
+            self.student_id, self.assignment_id, self.timestamp
+        )
+        timestamp_path = self.cache_dir / self.course_id / submission_name
+        os.makedirs(timestamp_path)
+
+        timestamp_file = timestamp_path / 'timestamp.txt'
+        with open(timestamp_file, 'w') as f:
+            f.write(self.timestamp)
+
         self.mock_404()
         self.fetch_feedback.start()
 
     def test_unsuccessful(self):
+        submission_name = '{}+{}+{}'.format(
+            self.student_id, self.assignment_id, self.timestamp
+        )
+        timestamp_path = self.cache_dir / self.course_id / submission_name
+        os.makedirs(timestamp_path)
+
+        timestamp_file = timestamp_path / 'timestamp.txt'
+        with open(timestamp_file, 'w') as f:
+            f.write(self.timestamp)
+
         self.mock_unsuccessful()
         self.fetch_feedback.start()
 
     def test_no_course_id(self):
         self.fetch_feedback.coursedir.course_id = ''
-        try:
-            self.fetch_feedback.start()
-        except Exception as e:
-            assert issubclass(type(e), ExchangeError)
-
-    def test_bad_student_id(self):
-        self.fetch_feedback.coursedir.student_id = '***'
         try:
             self.fetch_feedback.start()
         except Exception as e:
@@ -122,11 +149,35 @@ class TestExchangeFetchFeedback(TestExchange):
             with open(feedback_path, 'rb') as actual_file:
                 assert actual_file.read() == reference_file.read()
 
-    def test_wrong_student_id(self):
-        self.fetch_feedback.coursedir.student_id = 'xx+xx'
+    def test_fetch_path_includes_course(self):
 
-        with pytest.raises(ExchangeError):
-            self.fetch_feedback.start()
+        # set chache folder
+
+        submission_name = '{}+{}+{}'.format(
+            self.student_id, self.assignment_id, self.timestamp
+        )
+        timestamp_path = self.cache_dir / self.course_id / submission_name
+        os.makedirs(timestamp_path)
+
+        timestamp_file = timestamp_path / 'timestamp.txt'
+        with open(timestamp_file, 'w') as f:
+            f.write(self.timestamp)
+
+        self.fetch_feedback.path_includes_course = True
+        self.fetch_feedback.start()
+
+        feedback_path = (
+            self.course_dir
+            / self.course_id
+            / self.assignment_id
+            / 'feedback'
+            / self.timestamp
+            / (self.notebook_id + '.html')
+        )
+        assert feedback_path.is_file()
+        with open(self.files_path / 'feedback.html', 'rb') as reference_file:
+            with open(feedback_path, 'rb') as actual_file:
+                assert actual_file.read() == reference_file.read()
 
     def test_fetch_multiple_feedback(self):
         timestamp1 = 'timestamp1'
@@ -218,3 +269,23 @@ class TestExchangeFetchFeedback(TestExchange):
             / (self.notebook_id + '.html')
         )
         assert feedback_path.is_file()
+
+    def test_fetch_no_submissions(self):
+        self.fetch_feedback.start()
+
+    def test_fetch_nghsare_bad_feedback(self):
+        submission_name = '{}+{}+{}'.format(
+            self.student_id, self.assignment_id, self.timestamp
+        )
+        timestamp_path = self.cache_dir / self.course_id / submission_name
+        os.makedirs(timestamp_path)
+
+        timestamp_file = timestamp_path / 'timestamp.txt'
+        with open(timestamp_file, 'w') as f:
+            f.write(self.timestamp)
+
+        self._mock_bad_feedback()
+        try:
+            self.fetch_feedback.start()
+        except ExchangeError:
+            pass

@@ -1,0 +1,5 @@
+[run]
+omit = ngshare_exchange/tests/*
+
+[report]
+precision = 2

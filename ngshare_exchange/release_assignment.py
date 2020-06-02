@@ -1,19 +1,5 @@
 #!/usr/bin/python
 import os
-import shutil
-from stat import (
-    S_IRUSR,
-    S_IWUSR,
-    S_IXUSR,
-    S_IRGRP,
-    S_IWGRP,
-    S_IXGRP,
-    S_IROTH,
-    S_IWOTH,
-    S_IXOTH,
-    S_ISGID,
-    ST_MODE,
-)
 
 from traitlets import Bool
 
@@ -35,7 +21,7 @@ class ExchangeReleaseAssignment(Exchange, ABCExchangeReleaseAssignment):
                 'Use ExchangeReleaseAssignment in config, not ExchangeRelease. Outdated config:\n%s',
                 '\n'.join(
                     'ExchangeRelease.{key} = {value!r}'.format(
-                        key=key, value=svalue
+                        key=key, value=value
                     )
                     for (key, value) in cfg.ExchangeRelease.items()
                 ),
@@ -45,9 +31,6 @@ class ExchangeReleaseAssignment(Exchange, ABCExchangeReleaseAssignment):
             del cfg.ExchangeRelease
 
         super(ExchangeReleaseAssignment, self)._load_config(cfg, **kwargs)
-
-    def ensure_root(self):
-        pass
 
     def init_src(self):
         self.src_path = self.coursedir.format_path(
@@ -112,14 +95,12 @@ class ExchangeReleaseAssignment(Exchange, ABCExchangeReleaseAssignment):
                             self.coursedir.assignment_id
                         )
                     )
-                    return True
             else:
                 self.fail(
                     'Destination already exists, add --force to overwrite: {} {}'.format(
                         self.coursedir.course_id, self.coursedir.assignment_id
                     )
                 )
-                return True
 
         return False
 

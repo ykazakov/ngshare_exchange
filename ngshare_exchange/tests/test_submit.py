@@ -148,8 +148,11 @@ class TestExchangeSubmit(TestExchange):
         course_dir,
         assignment_id=TestExchange.assignment_id,
         notebook_id=TestExchange.notebook_id,
+        path_includes_course=False,
     ):
         course_dir = Path(course_dir).absolute()
+        if path_includes_course:
+            course_dir = course_dir / self.course_id
         assignment_dir = course_dir / assignment_id
         os.makedirs(assignment_dir)
         shutil.copyfile(
@@ -366,3 +369,27 @@ class TestExchangeSubmit(TestExchange):
         self.submit.start()
         assert not self.test_failed
         assert self.test_completed
+
+    def test_submit_path_includes_course(self, tmpdir_factory):
+        self._mock_requests_submit()
+        self.submit.path_includes_course = True
+        try:
+            self.submit.start()
+        except ExchangeError:
+            pass
+        course_dir = Path(tmpdir_factory.mktemp(self.course_id)).absolute()
+        self._prepare_submission(course_dir, path_includes_course=True)
+        os.chdir(course_dir)
+        self.submit.start()
+        assert not self.test_failed
+        assert self.test_completed
+
+    def test_submit_student_id(self):
+        self._mock_requests_submit()
+        self.submit.coursedir.student_id = self.student_id
+        try:
+            self.submit.start()
+        except ExchangeError:
+            pass
+        assert not self.test_failed
+        assert not self.test_completed

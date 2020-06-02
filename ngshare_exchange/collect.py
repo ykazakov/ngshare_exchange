@@ -9,13 +9,6 @@ from .exchange import Exchange
 
 from nbgrader.utils import parse_utc
 
-# pwd is for matching unix names with student ide, so we shouldn't import it on
-# windows machines
-if sys.platform != 'win32':
-    import pwd
-else:
-    pwd = None
-
 
 def groupby(l, key=lambda x: x):
     d = defaultdict(list)
