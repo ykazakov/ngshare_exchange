@@ -12,6 +12,7 @@ import requests_mock as rq_mock
 from requests_mock import Mocker
 import urllib
 import tempfile
+from urllib.parse import quote
 from .. import course_management as cm
 
 
@@ -26,7 +27,8 @@ def parse_body(body: str):
     return dict(urllib.parse.parse_qsl(body))
 
 
-NGSHARE_URL = 'http://127.0.0.1:12121/api'
+url = 'http://127.0.0.1:12121/api'
+NGSHARE_URL = quote(url, safe='/', encoding=None, errors=None)
 global _ngshare_url
 cm._ngshare_url = NGSHARE_URL
 
