@@ -5,6 +5,8 @@ import glob
 import requests
 import fnmatch
 from pathlib import Path
+from urllib.parse import quote
+from rapidfuzz import fuzz
 
 from textwrap import dedent
 
@@ -28,29 +30,30 @@ class Exchange(ABCExchange):
 
     _ngshare_url = Unicode(
         help=dedent(
-            """
+            '''
             Override default ngshare URL
-            """
+            '''
         ),
     ).tag(config=True)
 
     @property
     def ngshare_url(self):
+
         if self._ngshare_url:
             return self._ngshare_url
         if 'PROXY_PUBLIC_SERVICE_HOST' in os.environ:
             # we are in a kubernetes environment, so dns based service discovery should work
             # assuming the service is called ngshare, which it should
-            return "http://proxy-public/services/ngshare"
+            return 'http://proxy-public/services/ngshare'
         else:
             raise ValueError(
-                "ngshare url not configured in a non-k8s environment! Please configure the URL manually in nbgrader_config.py"
+                'ngshare url not configured in a non-k8s environment! Please configure the URL manually in nbgrader_config.py'
             )
 
     def _ngshare_api_check_error(self, response, url):
         if response.status_code != requests.codes.ok:
             self.log.error(
-                "ngshare service returned invalid status code %d.",
+                'ngshare service returned invalid status code %d.',
                 response.status_code,
             )
 
@@ -58,7 +61,7 @@ class Exchange(ABCExchange):
             response = response.json()
         except Exception:
             self.log.exception(
-                "ngshare service returned non-JSON content: '%s'.",
+                'ngshare service returned non-JSON content: "%s".',
                 response.text,
             )
             return None
@@ -66,12 +69,12 @@ class Exchange(ABCExchange):
         if not response['success']:
             if 'message' not in response:
                 self.log.error(
-                    "ngshare endpoint %s returned failure without an error message.",
+                    'ngshare endpoint %s returned failure without an error message.',
                     url,
                 )
             else:
                 self.log.error(
-                    "ngshare endpoint %s returned failure: %s",
+                    'ngshare endpoint %s returned failure: %s',
                     url,
                     response['message'],
                 )
@@ -79,6 +82,7 @@ class Exchange(ABCExchange):
         return response
 
     def ngshare_api_request(self, method, url, data=None, params=None):
+        encoded_url = self.encode_url(url)
         try:
             headers = None
             if 'JUPYTERHUB_API_TOKEN' in os.environ:
@@ -88,7 +92,7 @@ class Exchange(ABCExchange):
                 }
             response = requests.request(
                 method,
-                self.ngshare_url + url,
+                self.ngshare_url + encoded_url,
                 headers=headers,
                 data=data,
                 params=params,
@@ -100,6 +104,9 @@ class Exchange(ABCExchange):
             )
             return None
         return self._ngshare_api_check_error(response, url)
+
+    def encode_url(self, url):
+        return quote(url, safe='/', encoding=None, errors=None)
 
     def ngshare_api_get(self, url, params=None):
         return self.ngshare_api_request('GET', url, params=params)
@@ -113,10 +120,10 @@ class Exchange(ABCExchange):
     assignment_dir = Unicode(
         '.',
         help=dedent(
-            """
+            '''
             Local path for storing student assignments.  Defaults to '.'
             which is normally Jupyter's notebook_dir.
-            """
+            '''
         ),
     ).tag(config=True)
 
@@ -132,12 +139,12 @@ class Exchange(ABCExchange):
     path_includes_course = Bool(
         False,
         help=dedent(
-            """
+            '''
             Whether the path for fetching/submitting  assignments should be
             prefixed with the course name. If this is `False`, then the path
             will be something like `./ps1`. If this is `True`, then the path
             will be something like `./course123/ps1`.
-            """
+            '''
         ),
     ).tag(config=True)
 
@@ -210,17 +217,17 @@ class Exchange(ABCExchange):
         return dir_tree
 
     def init_src(self):
-        """Compute and check the source paths for the transfer."""
+        '''Compute and check the source paths for the transfer.'''
 
         raise NotImplementedError
 
     def init_dest(self):
-        """Compute and check the destination paths for the transfer."""
+        '''Compute and check the destination paths for the transfer.'''
 
         raise NotImplementedError
 
     def copy_files(self):
-        """Actually do the file transfer."""
+        '''Actually do the file transfer.'''
 
         raise NotImplementedError
 
@@ -228,30 +235,22 @@ class Exchange(ABCExchange):
         return super(Exchange, self).start()
 
     def _assignment_not_found(self, src_path, other_path):
-        msg = 'Assignment not found at: {}'.format(src_path)
+        msg = "Assignment not found at: {}".format(src_path)
         self.log.fatal(msg)
         found = glob.glob(other_path)
         if found:
-
-            # Normally it is a bad idea to put imports in the middle of
-            # a function, but we do this here because otherwise fuzzywuzzy
-            # prints an annoying message about python-Levenshtein every
-            # time nbgrader is run.
-
-            from fuzzywuzzy import fuzz
-
             scores = sorted([(fuzz.ratio(self.src_path, x), x) for x in found])
-            self.log.error('Did you mean: %s', scores[-1][1])
+            self.log.error("Did you mean: %s", scores[-1][1])
 
         raise ExchangeError(msg)
 
     def do_copy(self, src, dest, log=None):
-        """
+        '''
         Copy the src dir to the dest dir, omitting excluded
         file/directories, non included files, and too large files, as
         specified by the options coursedir.ignore, coursedir.include
         and coursedir.max_file_size.
-        """
+        '''
         shutil.copytree(
             src,
             dest,
@@ -264,7 +263,7 @@ class Exchange(ABCExchange):
         )
 
     def ignore_patterns(self):
-        """
+        '''
         Returns a function which decides whether or not a file should be
         ignored. The function has the signature
             ignore_patterns(directory, filename, filesize) -> bool
@@ -274,7 +273,7 @@ class Exchange(ABCExchange):
         will be ignored. If self.coursedir.include exists, filenames not
         matching the patterns will be ignored. If self.coursedir.max_file_size
         exists, files exceeding that size in kilobytes will be ignored.
-        """
+        '''
         exclude = self.coursedir.ignore
         include = self.coursedir.include
         max_file_size = self.coursedir.max_file_size
@@ -287,7 +286,7 @@ class Exchange(ABCExchange):
             ):
                 if log:
                     log.debug(
-                        "Ignoring excluded file '{}' (see config option "
+                        'Ignoring excluded file "{}" (see config option '
                         'CourseDirectory.ignore)'.format(fullname)
                     )
                 return True
@@ -296,14 +295,14 @@ class Exchange(ABCExchange):
             ):
                 if log:
                     log.debug(
-                        "Ignoring non included file '{}' (see config "
+                        'Ignoring non included file "{}" (see config '
                         'option CourseDirectory.include)'.format(fullname)
                     )
                 return True
             elif max_file_size and filesize > 1000 * max_file_size:
                 if log:
                     log.warning(
-                        "Ignoring file too large '{}' (see config "
+                        'Ignoring file too large "{}" (see config '
                         'option CourseDirectory.max_file_size)'.format(fullname)
                     )
                 return True

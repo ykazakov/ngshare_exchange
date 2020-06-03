@@ -23,7 +23,7 @@ class ExchangeReleaseFeedback(Exchange, ABCExchangeReleaseFeedback):
 
     def init_dest(self):
         if self.coursedir.course_id == '':
-            self.fail("No course id specified. Re-run with --course flag.")
+            self.fail('No course id specified. Re-run with --course flag.')
 
     def copy_files(self):
         if self.coursedir.student_id_exclude:
@@ -32,23 +32,23 @@ class ExchangeReleaseFeedback(Exchange, ABCExchangeReleaseFeedback):
             exclude_students = set()
 
         staged_feedback = {}  # Maps student IDs to submissions.
-        html_files = glob.glob(os.path.join(self.src_path, "*.html"))
+        html_files = glob.glob(os.path.join(self.src_path, '*.html'))
         for html_file in html_files:
             regexp = re.escape(os.path.sep).join(
                 [
                     self.coursedir.format_path(
                         self.coursedir.feedback_directory,
-                        "(?P<student_id>.*)",
+                        '(?P<student_id>.*)',
                         self.coursedir.assignment_id,
                         escape=True,
                     ),
-                    "(?P<notebook_id>.*).html",
+                    '(?P<notebook_id>.*).html',
                 ]
             )
 
             m = re.match(regexp, html_file)
             if m is None:
-                msg = "Could not match '%s' with regexp '%s'" % (
+                msg = 'Could not match "%s" with regexp "%s"' % (
                     html_file,
                     regexp,
                 )
@@ -59,7 +59,7 @@ class ExchangeReleaseFeedback(Exchange, ABCExchangeReleaseFeedback):
             student_id = gd['student_id']
             notebook_id = gd['notebook_id']
             if student_id in exclude_students:
-                self.log.debug("Skipping student '{}'".format(student_id))
+                self.log.debug('Skipping student "{}"'.format(student_id))
                 continue
 
             feedback_dir = os.path.split(html_file)[0]
@@ -69,18 +69,21 @@ class ExchangeReleaseFeedback(Exchange, ABCExchangeReleaseFeedback):
                 timestamp = timestamp_file.read()
 
             if student_id not in staged_feedback.keys():
-                staged_feedback[student_id] = {}  # Maps timestamp to feedback.
+                # Maps timestamp to feedback.
+                staged_feedback[student_id] = {}
             if timestamp not in staged_feedback[student_id].keys():
-                staged_feedback[student_id][timestamp] = []  # List of info.
+                # List of info.
+                staged_feedback[student_id][timestamp] = []
             staged_feedback[student_id][timestamp].append(
                 {'notebook_id': notebook_id, 'path': html_file}
             )
-
-        for student_id, submission in staged_feedback.items():  # Student.
-            for timestamp, feedback_info in submission.items():  # Submission.
+        # Student.
+        for student_id, submission in staged_feedback.items():
+            # Submission.
+            for timestamp, feedback_info in submission.items():
                 self.log.info(
-                    "Releasing feedback for student '{}' on "
-                    "assignment '{}/{}/{}' ({})".format(
+                    'Releasing feedback for student "{}" on '
+                    'assignment "{}/{}/{}" ({})'.format(
                         student_id,
                         self.coursedir.course_id,
                         self.coursedir.assignment_id,
@@ -97,12 +100,12 @@ class ExchangeReleaseFeedback(Exchange, ABCExchangeReleaseFeedback):
                     self.log.info('Feedback released.')
 
     def post_feedback(self, student_id, timestamp, feedback_info):
-        """
+        '''
         Uploads feedback files for a specific submission.
         ``feedback_info`` - A list of feedback files. Each feedback file is
-        represented as a dictionary with a "path" to the local feedback file and
-        "notebook_id" of the corresponding notebook.
-        """
+        represented as a dictionary with a 'path' to the local feedback file and
+        'notebook_id' of the corresponding notebook.
+        '''
         url = '/feedback/{}/{}/{}'.format(
             self.coursedir.course_id, self.coursedir.assignment_id, student_id
         )

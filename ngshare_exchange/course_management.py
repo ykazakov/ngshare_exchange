@@ -1,13 +1,11 @@
 import os
 import sys
-import getopt
 import requests
 import csv
-import pwd
-import grp
 import subprocess
 import json
 import argparse
+from urllib.parse import quote
 
 # https://www.geeksforgeeks.org/print-colors-python-terminal/
 def prRed(skk, exit=True):
@@ -51,7 +49,7 @@ def ngshare_url():
             return _ngshare_url
         except Exception as e:
             prRed(
-                "Cannot determine ngshare URL. Please check your nbgrader_config.py!",
+                'Cannot determine ngshare URL. Please check your nbgrader_config.py!',
                 False,
             )
             prRed(e)
@@ -89,11 +87,18 @@ def check_message(response):
     return response
 
 
+def encode_url(url):
+    return quote(url, safe='/', encoding=None, errors=None)
+
+
 def post(url, data):
     header = get_header()
+    encoded_url = encode_url(url)
 
     try:
-        response = requests.post(url, data=data, headers=header)
+        response = requests.post(
+            ngshare_url() + encoded_url, data=data, headers=header
+        )
         response.raise_for_status()
     except requests.exceptions.ConnectionError:
         prRed('Could not establish connection to ngshare server')
@@ -105,9 +110,11 @@ def post(url, data):
 
 def delete(url, data):
     header = get_header()
-
+    encoded_url = encode_url(url)
     try:
-        response = requests.delete(url, data=data, headers=header)
+        response = requests.delete(
+            ngshare_url() + encoded_url, data=data, headers=header
+        )
         response.raise_for_status()
     except requests.exceptions.ConnectionError:
         prRed('Could not establish connection to ngshare server')
@@ -119,7 +126,7 @@ def delete(url, data):
 
 def create_course(args):
     instructors = args.instructors or []
-    url = '{}/course/{}'.format(ngshare_url(), args.course_id)
+    url = '/course/{}'.format(args.course_id)
     data = {'user': get_username(), 'instructors': json.dumps(instructors)}
 
     response = post(url, data)
@@ -129,7 +136,7 @@ def create_course(args):
 def add_student(args):
     # add student to ngshare
     student = User(args.student_id, args.first_name, args.last_name, args.email)
-    url = '{}/student/{}/{}'.format(ngshare_url(), args.course_id, student.id)
+    url = '/student/{}/{}'.format(args.course_id, student.id)
     data = {
         'user': get_username(),
         'first_name': student.first_name,
@@ -206,7 +213,7 @@ def add_students(args):
             student_dict['email'] = email
             students.append(student_dict)
 
-    url = '{}/students/{}'.format(ngshare_url(), args.course_id)
+    url = '/students/{}'.format(args.course_id)
     data = {'user': get_username(), 'students': json.dumps(students)}
 
     response = post(url, data)
@@ -248,7 +255,7 @@ def remove_students(args):
         if not args.no_gb:
             remove_jh_student(student, args.force)
 
-        url = '{}/student/{}/{}'.format(ngshare_url(), args.course_id, student)
+        url = '/student/{}/{}'.format(args.course_id, student)
         data = {'user': get_username()}
         response = delete(url, data)
         prGreen(
@@ -257,9 +264,7 @@ def remove_students(args):
 
 
 def add_instructor(args):
-    url = '{}/instructor/{}/{}'.format(
-        ngshare_url(), args.course_id, args.instructor_id
-    )
+    url = '/instructor/{}/{}'.format(args.course_id, args.instructor_id)
     data = {
         'user': get_username(),
         'first_name': args.first_name,
@@ -276,9 +281,7 @@ def add_instructor(args):
 
 
 def remove_instructor(args):
-    url = '{}/instructor/{}/{}'.format(
-        ngshare_url(), args.course_id, args.instructor_id
-    )
+    url = '/instructor/{}/{}'.format(args.course_id, args.instructor_id)
     data = {'user': get_username()}
     response = delete(url, data)
     prGreen(

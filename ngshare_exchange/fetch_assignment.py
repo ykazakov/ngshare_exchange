@@ -55,7 +55,7 @@ class ExchangeFetchAssignment(Exchange, ABCExchangeFetchAssignment):
             )
 
     def do_copy(self, files):
-        """Copy the src dir to the dest dir omitting the self.coursedir.ignore globs."""
+        '''Copy the src dir to the dest dir omitting the self.coursedir.ignore globs.'''
         if os.path.isdir(self.dest_path):
             self.decode_dir(
                 files,
