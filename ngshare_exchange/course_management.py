@@ -96,7 +96,9 @@ def post(url, data):
     encoded_url = encode_url(url)
 
     try:
-        response = requests.post(ngshare_url() + encoded_url, data=data, headers=header)
+        response = requests.post(
+            ngshare_url() + encoded_url, data=data, headers=header
+        )
         response.raise_for_status()
     except requests.exceptions.ConnectionError:
         prRed('Could not establish connection to ngshare server')
@@ -110,7 +112,9 @@ def delete(url, data):
     header = get_header()
     encoded_url = encode_url(url)
     try:
-        response = requests.delete(ngshare_url() + encoded_url, data=data, headers=header)
+        response = requests.delete(
+            ngshare_url() + encoded_url, data=data, headers=header
+        )
         response.raise_for_status()
     except requests.exceptions.ConnectionError:
         prRed('Could not establish connection to ngshare server')
@@ -260,9 +264,7 @@ def remove_students(args):
 
 
 def add_instructor(args):
-    url = '/instructor/{}/{}'.format(
-        args.course_id, args.instructor_id
-    )
+    url = '/instructor/{}/{}'.format(args.course_id, args.instructor_id)
     data = {
         'user': get_username(),
         'first_name': args.first_name,
@@ -279,9 +281,7 @@ def add_instructor(args):
 
 
 def remove_instructor(args):
-    url = '/instructor/{}/{}'.format(
-        args.course_id, args.instructor_id
-    )
+    url = '/instructor/{}/{}'.format(args.course_id, args.instructor_id)
     data = {'user': get_username()}
     response = delete(url, data)
     prGreen(
