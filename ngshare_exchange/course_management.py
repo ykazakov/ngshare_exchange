@@ -124,8 +124,21 @@ def delete(url, data):
     return check_message(response)
 
 
+def check_username_warning(users):
+    invalid_usernames = [n for n in users if n != n.lower()]
+    if invalid_usernames:
+        prRed(
+            'The following usernames have upper-case letters. Normally JupyterHub forces usernames to be lowercase. If the user has trouble accessing the course, you should add their lowercase username to ngshare instead.',
+            False,
+        )
+        for user in invalid_usernames:
+            prRed(user, False)
+
+
 def create_course(args):
     instructors = args.instructors or []
+    check_username_warning(instructors)
+
     url = '/course/{}'.format(args.course_id)
     data = {'user': get_username(), 'instructors': json.dumps(instructors)}
 
@@ -135,6 +148,7 @@ def create_course(args):
 
 def add_student(args):
     # add student to ngshare
+    check_username_warning([student.id])
     student = User(args.student_id, args.first_name, args.last_name, args.email)
     url = '/student/{}/{}'.format(args.course_id, student.id)
     data = {
@@ -213,6 +227,7 @@ def add_students(args):
             student_dict['email'] = email
             students.append(student_dict)
 
+    check_username_warning([student['username'] for student in students])
     url = '/students/{}'.format(args.course_id)
     data = {'user': get_username(), 'students': json.dumps(students)}
 
@@ -264,6 +279,7 @@ def remove_students(args):
 
 
 def add_instructor(args):
+    check_username_warning([args.instructor_id])
     url = '/instructor/{}/{}'.format(args.course_id, args.instructor_id)
     data = {
         'user': get_username(),
