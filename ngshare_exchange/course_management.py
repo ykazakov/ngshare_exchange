@@ -148,7 +148,7 @@ def create_course(args):
 
 def add_student(args):
     # add student to ngshare
-    check_username_warning([student.id])
+    check_username_warning([args.student_id])
     student = User(args.student_id, args.first_name, args.last_name, args.email)
     url = '/student/{}/{}'.format(args.course_id, student.id)
     data = {
