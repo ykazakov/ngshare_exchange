@@ -19,6 +19,10 @@ def prGreen(skk):
     print('\033[92m {}\033[00m'.format(skk))
 
 
+def prYellow(skk):
+    print("\033[93m {}\033[00m".format(skk))
+
+
 class User:
     def __init__(self, id, first_name, last_name, email):
         self.id = id
@@ -127,12 +131,11 @@ def delete(url, data):
 def check_username_warning(users):
     invalid_usernames = [n for n in users if n != n.lower()]
     if invalid_usernames:
-        prRed(
+        prYellow(
             'The following usernames have upper-case letters. Normally JupyterHub forces usernames to be lowercase. If the user has trouble accessing the course, you should add their lowercase username to ngshare instead.',
-            False,
         )
         for user in invalid_usernames:
-            prRed(user, False)
+            prYellow(user)
 
 
 def create_course(args):
@@ -238,7 +241,9 @@ def add_students(args):
             user = s['username']
             if s['success']:
                 prGreen(
-                    '{} was sucessfuly added to {}'.format(user, args.course_id)
+                    '{} was successfuly added to {}'.format(
+                        user, args.course_id
+                    )
                 )
                 student = User(
                     user,
