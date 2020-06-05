@@ -16,9 +16,17 @@ from .. import course_management as cm
 
 
 def remove_color(s):
+    # https://stackoverflow.com/questions/14693701/how-can-i-remove-the-ansi-escape-sequences-from-a-string-in-python
     ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
     result = ansi_escape.sub('', s)
     return result
+
+
+def get_out_array(out):
+    out = remove_color(out)
+    out = out.split('\n')
+    out.remove('')
+    return out
 
 
 def parse_body(body: str):
@@ -43,6 +51,7 @@ class TestCourseManagement:
     instructor_id = 'mi1'
 
     course_created = False
+    bad_user_warning_message = 'The following usernames have upper-case letters. Normally JupyterHub forces usernames to be lowercase. If the user has trouble accessing the course, you should add their lowercase username to ngshare instead.'
 
     @pytest.fixture(autouse=True)
     def init(self, requests_mock: Mocker):
@@ -69,6 +78,7 @@ class TestCourseManagement:
 
     def _get_user_info(self, request: PreparedRequest, context):
         request = parse_body(request.body)
+        print(request)
         if 'first_name' not in request:
             return {'success': False, 'message': 'Please supply first name'}
         elif 'last_name' not in request:
@@ -106,6 +116,26 @@ class TestCourseManagement:
                 'status': [
                     {'username': 'sid1', 'success': True},
                     {'username': 'sid2', 'success': True},
+                ],
+            }
+        else:
+            return {'success': False, 'message': 'wrong students passed in'}
+
+    def _get_bad_students_info(self, request: PreparedRequest, context):
+        request = parse_body(request.body)
+        students = eval(request['students'])
+
+        if (
+            'Not_good' == students[0]['username']
+            and 'Bad' == students[1]['username']
+            and '123' == students[2]['username']
+        ):
+            return {
+                'success': True,
+                'status': [
+                    {'username': 'Not_good', 'success': True},
+                    {'username': 'Bad', 'success': True},
+                    {'username': '123', 'success': True},
                 ],
             }
         else:
@@ -185,6 +215,10 @@ class TestCourseManagement:
             url, json=self._get_students_info_unsuccessful
         )
 
+    def _mock_add_bad_students(self):
+        url = '{}/students/{}'.format(NGSHARE_URL, self.course_id)
+        self.requests_mocker.post(url, json=self._get_bad_students_info)
+
     def _mock_add_instructor(self):
         url = '{}/instructor/{}/{}'.format(
             NGSHARE_URL, self.course_id, self.instructor_id
@@ -203,7 +237,7 @@ class TestCourseManagement:
         )
         self.requests_mocker.delete(url, json=self._get_user)
 
-    def test_crete_course(self, capsys):
+    def test_create_course(self, capsys):
         self._mock_create_course()
         cm.main(['create_course', self.course_id] + self.instructors)
         out, err = capsys.readouterr()
@@ -224,6 +258,96 @@ class TestCourseManagement:
         assert ' Course already exists' in out
         assert se.type == SystemExit
         assert se.value.code == -1
+
+    def test_create_course_instructor_warning(self, capsys, tmpdir_factory):
+        # test passing in a list with one bad username
+        self._mock_create_course()
+        self.instructors = ['BadUsername', 'goodusername']
+        cm.main(['create_course', self.course_id] + self.instructors)
+
+        out, err = capsys.readouterr()
+        out = get_out_array(out)
+
+        assert self.bad_user_warning_message in out[0]
+        assert 'BadUsername' in out[1]
+        assert 'Successfully created math101' in out[-1]
+
+    def test_add_student_warning(self, capsys, tmpdir_factory):
+        # test trying to add a student with bad username
+        self.student_id = 'BAD_username'
+        self._mock_add_student()
+        cm.main(
+            [
+                'add_student',
+                self.course_id,
+                self.student_id,
+                '-f',
+                'jane',
+                '-l',
+                'doe',
+                '-e' 'jd@mail.com',
+                '--no-gb',
+            ]
+        )
+
+        out, err = capsys.readouterr()
+        out = get_out_array(out)
+
+        assert self.bad_user_warning_message in out[0]
+        assert 'BAD_username' in out[1]
+        assert 'Successfully added/updated BAD_username on math101' in out[-1]
+
+    def test_add_instructor_warning(self, capsys, tmpdir_factory):
+        # test adding an instructor with a bad username
+        self.instructor_id = 'Bad_Inst'
+        self._mock_add_instructor()
+        cm.main(
+            [
+                'add_instructor',
+                self.course_id,
+                self.instructor_id,
+                '-f',
+                'john',
+                '-l',
+                'doe',
+                '-e',
+                'jd@mail.com',
+            ]
+        )
+
+        out, err = capsys.readouterr()
+        out = get_out_array(out)
+
+        assert self.bad_user_warning_message in out[0]
+        assert 'Bad_Inst' in out[1]
+        assert 'Successfully added Bad_Inst as an instructor to math' in out[-1]
+
+    def test_add_students_warning(self, capsys, tmpdir_factory):
+        # check add students with bad usernames
+        tmp_dir = tmpdir_factory.mktemp(self.course_id)
+        os.chdir(tmp_dir)
+        self._add_empty_gradebook(tmp_dir)
+        self._mock_add_bad_students()
+        with tempfile.NamedTemporaryFile() as f:
+            f.writelines(
+                [
+                    b'student_id,first_name,last_name,email\n',
+                    b'Not_good,jane,doe,jd@mail.com\n',
+                    b'Bad,john,perez,jp@mail.com\n',
+                    b'123,john,perez,jp@mail.com\n',
+                ]
+            )
+            f.flush()
+            cm.main(['add_students', self.course_id, f.name])
+
+        out, err = capsys.readouterr()
+        out = get_out_array(out)
+        assert self.bad_user_warning_message in out[0]
+        assert 'Not_good' in out[1]
+        assert 'Bad' in out[2]
+        assert 'Not_good was successfully added to math101' in out[-3]
+        assert 'Bad was successfully added to math101' in out[-2]
+        assert '123 was successfully added to math101' in out[-1]
 
     def test_add_student(self, capsys):
         # test missing course id
@@ -315,8 +439,8 @@ class TestCourseManagement:
             f.flush()
             cm.main(['add_students', self.course_id, f.name])
         out, err = capsys.readouterr()
-        assert 'sid1 was sucessfuly added to math101' in out
-        assert 'sid2 was sucessfuly added to math101' in out
+        assert 'sid1 was successfully added to math101' in out
+        assert 'sid2 was successfully added to math101' in out
 
         gb = Gradebook('sqlite:///gradebook.db', course_id=self.course_id)
         students = gb.students
@@ -368,8 +492,8 @@ class TestCourseManagement:
             f.flush()
             cm.main(['add_students', self.course_id, f.name, '--no-gb'])
         out, err = capsys.readouterr()
-        assert 'sid1 was sucessfuly added to math101' in out
-        assert 'sid2 was sucessfuly added to math101' in out
+        assert 'sid1 was successfully added to math101' in out
+        assert 'sid2 was successfully added to math101' in out
 
     def test_add_students_unsuccessful(self, capsys, tmp_path):
         self._mock_add_students_unsuccessful()
@@ -385,7 +509,7 @@ class TestCourseManagement:
             cm.main(['add_students', self.course_id, f.name, '--no-gb'])
         out, err = capsys.readouterr()
         assert 'There was an error adding sid1 to math101: ' in out
-        assert 'sid2 was sucessfuly added to math101' in out
+        assert 'sid2 was successfully added to math101' in out
 
     def test_add_instructor(self, capsys):
         self._mock_add_instructor()
@@ -533,9 +657,9 @@ class TestCourseManagement:
 
             cm.main(['add_students', self.course_id, f.name, '--no-gb'])
             out, err = capsys.readouterr()
-            assert 'sid1 was sucessfuly added to math101' in out
+            assert 'sid1 was successfully added to math101' in out
             assert 'Student ID cannot be empty (row 2)' in out
-            assert 'sid2 was sucessfuly added to math101' in out
+            assert 'sid2 was successfully added to math101' in out
 
     def test_get_username(self):
         jhu = 'JUPYTERHUB_USER'
