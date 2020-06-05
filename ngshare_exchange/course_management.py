@@ -241,7 +241,7 @@ def add_students(args):
             user = s['username']
             if s['success']:
                 prGreen(
-                    '{} was successfuly added to {}'.format(
+                    '{} was successfully added to {}'.format(
                         user, args.course_id
                     )
                 )

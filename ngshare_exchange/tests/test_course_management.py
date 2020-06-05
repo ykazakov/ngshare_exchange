@@ -345,9 +345,9 @@ class TestCourseManagement:
         assert self.bad_user_warning_message in out[0]
         assert 'Not_good' in out[1]
         assert 'Bad' in out[2]
-        assert 'Not_good was successfuly added to math101' in out[-3]
-        assert 'Bad was successfuly added to math101' in out[-2]
-        assert '123 was successfuly added to math101' in out[-1]
+        assert 'Not_good was successfully added to math101' in out[-3]
+        assert 'Bad was successfully added to math101' in out[-2]
+        assert '123 was successfully added to math101' in out[-1]
 
     def test_add_student(self, capsys):
         # test missing course id
@@ -439,8 +439,8 @@ class TestCourseManagement:
             f.flush()
             cm.main(['add_students', self.course_id, f.name])
         out, err = capsys.readouterr()
-        assert 'sid1 was successfuly added to math101' in out
-        assert 'sid2 was successfuly added to math101' in out
+        assert 'sid1 was successfully added to math101' in out
+        assert 'sid2 was successfully added to math101' in out
 
         gb = Gradebook('sqlite:///gradebook.db', course_id=self.course_id)
         students = gb.students
@@ -492,8 +492,8 @@ class TestCourseManagement:
             f.flush()
             cm.main(['add_students', self.course_id, f.name, '--no-gb'])
         out, err = capsys.readouterr()
-        assert 'sid1 was successfuly added to math101' in out
-        assert 'sid2 was successfuly added to math101' in out
+        assert 'sid1 was successfully added to math101' in out
+        assert 'sid2 was successfully added to math101' in out
 
     def test_add_students_unsuccessful(self, capsys, tmp_path):
         self._mock_add_students_unsuccessful()
@@ -509,7 +509,7 @@ class TestCourseManagement:
             cm.main(['add_students', self.course_id, f.name, '--no-gb'])
         out, err = capsys.readouterr()
         assert 'There was an error adding sid1 to math101: ' in out
-        assert 'sid2 was successfuly added to math101' in out
+        assert 'sid2 was successfully added to math101' in out
 
     def test_add_instructor(self, capsys):
         self._mock_add_instructor()
@@ -657,9 +657,9 @@ class TestCourseManagement:
 
             cm.main(['add_students', self.course_id, f.name, '--no-gb'])
             out, err = capsys.readouterr()
-            assert 'sid1 was successfuly added to math101' in out
+            assert 'sid1 was successfully added to math101' in out
             assert 'Student ID cannot be empty (row 2)' in out
-            assert 'sid2 was successfuly added to math101' in out
+            assert 'sid2 was successfully added to math101' in out
 
     def test_get_username(self):
         jhu = 'JUPYTERHUB_USER'
