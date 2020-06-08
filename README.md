@@ -1,10 +1,10 @@
 # ngshare_exchange
-[![Build Status](https://travis-ci.org/lxylxy123456/ngshare_exchange.svg?branch=master)](https://travis-ci.org/lxylxy123456/ngshare_exchange)
-[![codecov](https://codecov.io/gh/lxylxy123456/ngshare_exchange/branch/master/graph/badge.svg)](https://codecov.io/gh/lxylxy123456/ngshare_exchange)
+[![Build Status](https://travis-ci.org/LibreTexts/ngshare_exchange.svg?branch=master)](https://travis-ci.org/LibreTexts/ngshare_exchange)
+[![codecov](https://codecov.io/gh/LibreTexts/ngshare_exchange/branch/master/graph/badge.svg)](https://codecov.io/gh/LibreTexts/ngshare_exchange)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Documentation Status](https://readthedocs.org/projects/ngshare-exchange/badge/?version=latest)](https://ngshare-exchange.readthedocs.io/en/latest/?badge=latest)
 
-Custom [nbgrader](https://github.com/jupyter/nbgrader) exchange to be used with [ngshare](https://github.com/lxylxy123456/ngshare). This should be installed in the singleuser image of [Z2JH](https://github.com/jupyterhub/zero-to-jupyterhub-k8s) to allow the users to use ngshare.
+Custom [nbgrader](https://github.com/jupyter/nbgrader) exchange to be used with [ngshare](https://github.com/LibreTexts/ngshare). This should be installed in the singleuser image of [Z2JH](https://github.com/jupyterhub/zero-to-jupyterhub-k8s) to allow the users to use ngshare.
 
 # Installation instructions
 
