@@ -1,4 +1,4 @@
-language: python
+		language: python
 python:
 - 3.6
 - 3.7
@@ -20,12 +20,11 @@ before_install:
 install:
 - python3 -m pip install .
 before_script:
-- python3 -m pip install pytest pytest-cov pytest-tornado black requests_mock
+- python3 -m pip install -r testing_reqs.txt
 script:
 - python3 -m pytest ./ngshare_exchange/ --cov=./ngshare_exchange/
 - python3 -m black -S -l 80 --check .
 after_success:
-- python3 -m pip install "codecov>=2.1.0"
 - codecov
 deploy:
   provider: pypi
