@@ -1,6 +1,5 @@
 import os
 import shutil
-import sys
 from collections import defaultdict
 import base64
 
@@ -8,13 +7,6 @@ from nbgrader.exchange.abc import ExchangeCollect as ABCExchangeCollect
 from .exchange import Exchange
 
 from nbgrader.utils import parse_utc
-
-# pwd is for matching unix names with student ide, so we shouldn't import it on
-# windows machines
-if sys.platform != 'win32':
-    import pwd
-else:
-    pwd = None
 
 
 def groupby(l, key=lambda x: x):
@@ -26,15 +18,15 @@ def groupby(l, key=lambda x: x):
 
 class ExchangeCollect(Exchange, ABCExchangeCollect):
     def _get_submission(self, course_id, assignment_id, student_id):
-        """
+        '''
         Returns the student's submission. A submission is a dictionary
-        containing a "timestamp" and "files" list. Each file in the list is a
-        dictionary containing the "path" relative to the assignment root and the
-        "content" as an ASCII representation of the base64 encoded bytes.
-        """
+        containing a 'timestamp' and 'files' list. Each file in the list is a
+        dictionary containing the 'path' relative to the assignment root and the
+        'content' as an ASCII representation of the base64 encoded bytes.
+        '''
 
         response = self.ngshare_api_get(
-            "/submission/{}/{}/{}".format(course_id, assignment_id, student_id)
+            '/submission/{}/{}/{}'.format(course_id, assignment_id, student_id)
         )
         if response is None:
             self.log.error('An error occurred downloading a submission.')
@@ -51,10 +43,10 @@ class ExchangeCollect(Exchange, ABCExchangeCollect):
         return {'timestamp': timestamp, 'files': files}
 
     def _get_submission_list(self, course_id, assignment_id):
-        """
+        '''
         Returns a list of submission entries. Each entry is a dictionary
-        containing the "student_id" and "timestamp".
-        """
+        containing the 'student_id' and 'timestamp'.
+        '''
         response = self.ngshare_api_get(
             '/submissions/{}/{}'.format(course_id, assignment_id)
         )
@@ -74,7 +66,7 @@ class ExchangeCollect(Exchange, ABCExchangeCollect):
 
     def init_src(self):
         if self.coursedir.course_id == '':
-            self.fail("No course id specified. Re-run with --course flag.")
+            self.fail('No course id specified. Re-run with --course flag.')
 
         records = self._get_submission_list(
             self.coursedir.course_id, self.coursedir.assignment_id
@@ -92,13 +84,13 @@ class ExchangeCollect(Exchange, ABCExchangeCollect):
     def copy_files(self):
         if len(self.src_records) == 0:
             self.log.warning(
-                "No submissions of '{}' for course '{}' to collect".format(
+                'No submissions of "{}" for course "{}" to collect'.format(
                     self.coursedir.assignment_id, self.coursedir.course_id
                 )
             )
         else:
             self.log.info(
-                "Processing {} submissions of '{}' for course '{}'".format(
+                'Processing {} submissions of "{}" for course "{}"'.format(
                     len(self.src_records),
                     self.coursedir.assignment_id,
                     self.coursedir.course_id,
@@ -135,14 +127,14 @@ class ExchangeCollect(Exchange, ABCExchangeCollect):
             if copy:
                 if updating:
                     self.log.info(
-                        "Updating submission: {} {}".format(
+                        'Updating submission: {} {}'.format(
                             student_id, self.coursedir.assignment_id
                         )
                     )
                     shutil.rmtree(dest_path)
                 else:
                     self.log.info(
-                        "Collecting submission: {} {}".format(
+                        'Collecting submission: {} {}'.format(
                             student_id, self.coursedir.assignment_id
                         )
                     )
@@ -157,19 +149,19 @@ class ExchangeCollect(Exchange, ABCExchangeCollect):
             else:
                 if self.update:
                     self.log.info(
-                        "No newer submission to collect: {} {}".format(
+                        'No newer submission to collect: {} {}'.format(
                             student_id, self.coursedir.assignment_id
                         )
                     )
                 else:
                     self.log.info(
-                        "Submission already exists, use --update to update: {} {}".format(
+                        'Submission already exists, use --update to update: {} {}'.format(
                             student_id, self.coursedir.assignment_id
                         )
                     )
 
     def do_copy(self, src, dest):
-        """
+        '''
         Repurposed version of Exchange.do_copy.
-        """
+        '''
         self.decode_dir(src, dest)

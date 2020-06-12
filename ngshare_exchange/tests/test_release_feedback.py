@@ -156,3 +156,36 @@ class TestExchangeReleaseFeedback(TestExchange):
         self.student_id = 'student_2'
         self._mock_requests_release()
         self.release_feedback.start()
+
+    def test_release_exclude_1(self):
+        self.feedback_file = 'feedback.html'
+        self.timestamp = 'some_timestamp'
+        self._mock_requests_release()
+        self.release_feedback.coursedir.student_id_exclude = 'fake_id'
+        self.release_feedback.start()
+        assert not self.test_failed
+        assert self.test_completed
+
+    def test_release_exclude_2(self):
+        self.feedback_file = 'feedback.html'
+        self.timestamp = 'some_timestamp'
+        self._mock_requests_release()
+        self.release_feedback.coursedir.student_id_exclude = self.student_id
+        self.release_feedback.start()
+        assert not self.test_failed
+        assert not self.test_completed
+
+    def test_release_bad_assignment_id(self):
+        self.feedback_file = 'feedback.html'
+        self.timestamp = 'some_timestamp'
+        self._mock_requests_release()
+        old_init_src = self.release_feedback.init_src
+
+        def new_init_src():
+            old_init_src()
+            self.release_feedback.coursedir.assignment_id = 'fake_id'
+
+        self.release_feedback.init_src = new_init_src
+        self.release_feedback.start()
+        assert not self.test_failed
+        assert not self.test_completed

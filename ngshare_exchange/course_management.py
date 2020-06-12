@@ -1,13 +1,11 @@
 import os
 import sys
-import getopt
 import requests
 import csv
-import pwd
-import grp
 import subprocess
 import json
 import argparse
+from urllib.parse import quote
 
 # https://www.geeksforgeeks.org/print-colors-python-terminal/
 def prRed(skk, exit=True):
@@ -19,6 +17,10 @@ def prRed(skk, exit=True):
 
 def prGreen(skk):
     print('\033[92m {}\033[00m'.format(skk))
+
+
+def prYellow(skk):
+    print("\033[93m {}\033[00m".format(skk))
 
 
 class User:
@@ -51,7 +53,7 @@ def ngshare_url():
             return _ngshare_url
         except Exception as e:
             prRed(
-                "Cannot determine ngshare URL. Please check your nbgrader_config.py!",
+                'Cannot determine ngshare URL. Please check your nbgrader_config.py!',
                 False,
             )
             prRed(e)
@@ -89,11 +91,18 @@ def check_message(response):
     return response
 
 
+def encode_url(url):
+    return quote(url, safe='/', encoding=None, errors=None)
+
+
 def post(url, data):
     header = get_header()
+    encoded_url = encode_url(url)
 
     try:
-        response = requests.post(url, data=data, headers=header)
+        response = requests.post(
+            ngshare_url() + encoded_url, data=data, headers=header
+        )
         response.raise_for_status()
     except requests.exceptions.ConnectionError:
         prRed('Could not establish connection to ngshare server')
@@ -105,19 +114,35 @@ def post(url, data):
 
 def delete(url, data):
     header = get_header()
-
+    encoded_url = encode_url(url)
     try:
-        response = requests.delete(url, data=data, headers=header)
-        response.raise_for_status
+        response = requests.delete(
+            ngshare_url() + encoded_url, data=data, headers=header
+        )
+        response.raise_for_status()
+    except requests.exceptions.ConnectionError:
+        prRed('Could not establish connection to ngshare server')
     except Exception:
         check_status_code(response)
 
     return check_message(response)
 
 
+def check_username_warning(users):
+    invalid_usernames = [n for n in users if n != n.lower()]
+    if invalid_usernames:
+        prYellow(
+            'The following usernames have upper-case letters. Normally JupyterHub forces usernames to be lowercase. If the user has trouble accessing the course, you should add their lowercase username to ngshare instead.',
+        )
+        for user in invalid_usernames:
+            prYellow(user)
+
+
 def create_course(args):
     instructors = args.instructors or []
-    url = '{}/course/{}'.format(ngshare_url(), args.course_id)
+    check_username_warning(instructors)
+
+    url = '/course/{}'.format(args.course_id)
     data = {'user': get_username(), 'instructors': json.dumps(instructors)}
 
     response = post(url, data)
@@ -126,8 +151,9 @@ def create_course(args):
 
 def add_student(args):
     # add student to ngshare
+    check_username_warning([args.student_id])
     student = User(args.student_id, args.first_name, args.last_name, args.email)
-    url = '{}/student/{}/{}'.format(ngshare_url(), args.course_id, student.id)
+    url = '/student/{}/{}'.format(args.course_id, student.id)
     data = {
         'user': get_username(),
         'first_name': student.first_name,
@@ -190,7 +216,9 @@ def add_students(args):
             student_dict = {}
             student_id = row[cols_dict['student_id']]
             if len(student_id.replace(' ', '')) == 0:
-                prRed('Student ID cannot be empty (row {})'.format(i + 1))
+                prRed(
+                    'Student ID cannot be empty (row {})'.format(i + 1), False
+                )
                 continue
             first_name = row[cols_dict['first_name']]
             last_name = row[cols_dict['last_name']]
@@ -202,7 +230,8 @@ def add_students(args):
             student_dict['email'] = email
             students.append(student_dict)
 
-    url = '{}/students/{}'.format(ngshare_url(), args.course_id)
+    check_username_warning([student['username'] for student in students])
+    url = '/students/{}'.format(args.course_id)
     data = {'user': get_username(), 'students': json.dumps(students)}
 
     response = post(url, data)
@@ -212,7 +241,9 @@ def add_students(args):
             user = s['username']
             if s['success']:
                 prGreen(
-                    '{} was sucessfuly added to {}'.format(user, args.course_id)
+                    '{} was successfully added to {}'.format(
+                        user, args.course_id
+                    )
                 )
                 student = User(
                     user,
@@ -225,7 +256,7 @@ def add_students(args):
             else:
                 prRed(
                     'There was an error adding {} to {}: {}'.format(
-                        user, course_id, s['message']
+                        user, args.course_id, s['message']
                     ),
                     False,
                 )
@@ -244,7 +275,7 @@ def remove_students(args):
         if not args.no_gb:
             remove_jh_student(student, args.force)
 
-        url = '{}/student/{}/{}'.format(ngshare_url(), args.course_id, student)
+        url = '/student/{}/{}'.format(args.course_id, student)
         data = {'user': get_username()}
         response = delete(url, data)
         prGreen(
@@ -253,9 +284,8 @@ def remove_students(args):
 
 
 def add_instructor(args):
-    url = '{}/instructor/{}/{}'.format(
-        ngshare_url(), args.course_id, args.instructor_id
-    )
+    check_username_warning([args.instructor_id])
+    url = '/instructor/{}/{}'.format(args.course_id, args.instructor_id)
     data = {
         'user': get_username(),
         'first_name': args.first_name,
@@ -272,9 +302,7 @@ def add_instructor(args):
 
 
 def remove_instructor(args):
-    url = '{}/instructor/{}/{}'.format(
-        ngshare_url(), args.course_id, args.instructor_id
-    )
+    url = '/instructor/{}/{}'.format(args.course_id, args.instructor_id)
     data = {'user': get_username()}
     response = delete(url, data)
     prGreen(
