@@ -174,7 +174,7 @@ class Exchange(ABCExchange):
             if not os.path.exists(dir_name) and dir_name != '':
                 subdir = os.path.join(dest_dir, dir_name)
                 if not os.path.exists(subdir):
-                    os.mkdir(subdir)
+                    os.makedirs(subdir, exist_ok=True)
                 dest_path = os.path.join(subdir, file_name)
 
             self.log.info('Decoding: {}'.format(dest_path))
