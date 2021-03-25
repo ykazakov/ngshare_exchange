@@ -31,6 +31,13 @@ class TestExchangeClass(TestExchange):
             {'path': 'ignore_me.ipynb', 'content': 'ijklmnop'},
         ]
 
+    def _get_encoded_subdir_tree(self):
+        return [
+            {'path': 'path/problem1.ipynb', 'content': 'abcdefgh'},
+            {'path': 'path/to/notebook/problem1.ipynb', 'content': 'ijklmnop'},
+            {'path': 'path/ignore_me.ipynb', 'content': 'qrstuvwx'},
+        ]
+
     def _get_response(self, status_code, json):
         url = 'http://_get_response'
         self.requests_mocker.get(url, status_code=status_code, json=json)
@@ -121,6 +128,20 @@ class TestExchangeClass(TestExchange):
         dir = default_cache
         assert Path(dir) == Path(jupyter_data_dir()) / 'nbgrader_cache'
 
+    def test_decode_clobber(self):
+        src = self._get_encoded_tree()
+        existing = self.course_dir / 'problem1.ipynb'
+        existing.write_bytes(b'Not clobbered')
+        self.exchange.decode_dir(src, self.course_dir, noclobber=False)
+        assert existing.read_bytes() != b'Not clobbered'
+
+    def test_decode_no_clobber(self):
+        src = self._get_encoded_tree()
+        existing = self.course_dir / 'problem1.ipynb'
+        existing.write_bytes(b'Not clobbered')
+        self.exchange.decode_dir(src, self.course_dir, noclobber=True)
+        assert existing.read_bytes() == b'Not clobbered'
+
     def test_decode_ignore(self):
         src = self._get_encoded_tree()
         ignore_patterns = self.exchange.ignore_patterns()
@@ -135,6 +156,49 @@ class TestExchangeClass(TestExchange):
         self.exchange.decode_dir(src, self.course_dir, ignore=None)
         assert (self.course_dir / 'problem1.ipynb').exists()
         assert (self.course_dir / 'ignore_me.ipynb').exists()
+
+    def test_decode_subdir(self):
+        src = self._get_encoded_subdir_tree()
+        self.exchange.decode_dir(src, self.course_dir)
+        for file in src:
+            assert (self.course_dir / file['path']).exists()
+
+    def test_decode_subdir_ignore(self):
+        src = self._get_encoded_subdir_tree()
+        ignore_patterns = self.exchange.ignore_patterns()
+        self.exchange.coursedir.ignore.append('ignore_me*')
+        self.exchange.decode_dir(src, self.course_dir, ignore=ignore_patterns)
+        assert (self.course_dir / 'path' / 'problem1.ipynb').exists()
+        assert (
+            self.course_dir / 'path' / 'to' / 'notebook' / 'problem1.ipynb'
+        ).exists()
+        assert not (self.course_dir / 'path' / 'ignore_me.ipynb').exists()
+
+    def test_decode_subdir_no_ignore(self):
+        src = self._get_encoded_subdir_tree()
+        self.exchange.coursedir.ignore.append('ignore_me*')
+        self.exchange.decode_dir(src, self.course_dir, ignore=None)
+        assert (self.course_dir / 'path' / 'problem1.ipynb').exists()
+        assert (
+            self.course_dir / 'path' / 'to' / 'notebook' / 'problem1.ipynb'
+        ).exists()
+        assert (self.course_dir / 'path' / 'ignore_me.ipynb').exists()
+
+    def test_decode_subdir_clobber(self):
+        src = self._get_encoded_subdir_tree()
+        existing = self.course_dir / 'path' / 'problem1.ipynb'
+        existing.parent.mkdir()
+        existing.write_bytes(b'Not clobbered')
+        self.exchange.decode_dir(src, self.course_dir, noclobber=False)
+        assert existing.read_bytes() != b'Not clobbered'
+
+    def test_decode_subdir_no_clobber(self):
+        src = self._get_encoded_subdir_tree()
+        existing = self.course_dir / 'path' / 'problem1.ipynb'
+        existing.parent.mkdir()
+        existing.write_bytes(b'Not clobbered')
+        self.exchange.decode_dir(src, self.course_dir, noclobber=True)
+        assert existing.read_bytes() == b'Not clobbered'
 
     def test_encode_subdir(self):
         assignment_dir = self.course_dir / self.assignment_id
