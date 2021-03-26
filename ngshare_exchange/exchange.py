@@ -167,7 +167,7 @@ class Exchange(ABCExchange):
             dir_name = path_components[0]
             file_name = path_components[1]
 
-            dest_path = os.path.join(dest_dir, file_name)
+            dest_path = os.path.join(dest_dir, src_path)
             if noclobber and os.path.isfile(dest_path):
                 continue
             # the file could be in a subdirectory, check if directory exists
