@@ -100,12 +100,12 @@ class ExchangeReleaseFeedback(Exchange, ABCExchangeReleaseFeedback):
                     self.log.info('Feedback released.')
 
     def post_feedback(self, student_id, timestamp, feedback_info):
-        '''
+        """
         Uploads feedback files for a specific submission.
         ``feedback_info`` - A list of feedback files. Each feedback file is
         represented as a dictionary with a 'path' to the local feedback file and
         'notebook_id' of the corresponding notebook.
-        '''
+        """
         url = '/feedback/{}/{}/{}'.format(
             self.coursedir.course_id, self.coursedir.assignment_id, student_id
         )

@@ -18,12 +18,12 @@ def groupby(l, key=lambda x: x):
 
 class ExchangeCollect(Exchange, ABCExchangeCollect):
     def _get_submission(self, course_id, assignment_id, student_id):
-        '''
+        """
         Returns the student's submission. A submission is a dictionary
         containing a 'timestamp' and 'files' list. Each file in the list is a
         dictionary containing the 'path' relative to the assignment root and the
         'content' as an ASCII representation of the base64 encoded bytes.
-        '''
+        """
 
         response = self.ngshare_api_get(
             '/submission/{}/{}/{}'.format(course_id, assignment_id, student_id)
@@ -43,10 +43,10 @@ class ExchangeCollect(Exchange, ABCExchangeCollect):
         return {'timestamp': timestamp, 'files': files}
 
     def _get_submission_list(self, course_id, assignment_id):
-        '''
+        """
         Returns a list of submission entries. Each entry is a dictionary
         containing the 'student_id' and 'timestamp'.
-        '''
+        """
         response = self.ngshare_api_get(
             '/submissions/{}/{}'.format(course_id, assignment_id)
         )
@@ -161,7 +161,7 @@ class ExchangeCollect(Exchange, ABCExchangeCollect):
                     )
 
     def do_copy(self, src, dest):
-        '''
+        """
         Repurposed version of Exchange.do_copy.
-        '''
+        """
         self.decode_dir(src, dest)

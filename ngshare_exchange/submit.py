@@ -7,9 +7,9 @@ from nbgrader.utils import find_all_notebooks
 
 class ExchangeSubmit(Exchange, ABCExchangeSubmit):
     def _get_assignment_notebooks(self, course_id, assignment_id):
-        '''
+        """
         Returns a list of relative paths for all files in the assignment.
-        '''
+        """
         url = '/assignment/{}/{}'.format(course_id, assignment_id)
         params = {'list_only': 'true'}
 
@@ -81,7 +81,8 @@ class ExchangeSubmit(Exchange, ABCExchangeSubmit):
 
         if missing or extra:
             diff_msg = 'Expected:\n\t{}\nSubmitted:\n\t{}'.format(
-                '\n\t'.join(release_diff), '\n\t'.join(submitted_diff),
+                '\n\t'.join(release_diff),
+                '\n\t'.join(submitted_diff),
             )
             if missing and self.strict:
                 self.fail(

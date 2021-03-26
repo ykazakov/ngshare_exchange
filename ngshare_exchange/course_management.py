@@ -343,13 +343,22 @@ def parse_args(argv):
         help='Username of the added/modified instructor',
     )
     add_instructor_parser.add_argument(
-        '-f', '--first_name', default=None, help='First name of the instructor',
+        '-f',
+        '--first_name',
+        default=None,
+        help='First name of the instructor',
     )
     add_instructor_parser.add_argument(
-        '-l', '--last_name', default=None, help='Last name of the instructor',
+        '-l',
+        '--last_name',
+        default=None,
+        help='Last name of the instructor',
     )
     add_instructor_parser.add_argument(
-        '-e', '--email', default=None, help='Email of the instructor',
+        '-e',
+        '--email',
+        default=None,
+        help='Email of the instructor',
     )
     add_instructor_parser.set_defaults(func=add_instructor)
 
@@ -378,13 +387,22 @@ def parse_args(argv):
         help='Username of the added/modified student',
     )
     add_student_parser.add_argument(
-        '-f', '--first_name', default=None, help='First name of the student',
+        '-f',
+        '--first_name',
+        default=None,
+        help='First name of the student',
     )
     add_student_parser.add_argument(
-        '-l', '--last_name', default=None, help='Last name of the student',
+        '-l',
+        '--last_name',
+        default=None,
+        help='Last name of the student',
     )
     add_student_parser.add_argument(
-        '-e', '--email', default=None, help='Email of the student',
+        '-e',
+        '--email',
+        default=None,
+        help='Email of the student',
     )
     add_student_parser.add_argument(
         '--no-gb',

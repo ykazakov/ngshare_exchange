@@ -15,12 +15,12 @@ def _checksum(path):
 
 
 def _merge_notebooks_feedback(notebook_ids, checksums):
-    '''
+    """
     Returns a list of dictionaries with 'notebook_id' and 'feedback_checksum'.
 
     ``notebook_ids`` - A list of notebook IDs.
     ``checksum`` - A dictionary mapping notebook IDs to checksums.
-    '''
+    """
     merged = []
     for nb_id in notebook_ids:
         if nb_id not in checksums.keys():
@@ -32,10 +32,10 @@ def _merge_notebooks_feedback(notebook_ids, checksums):
 
 
 def _parse_notebook_id(path, extension='.ipynb'):
-    '''
+    """
     Returns the notebook_id from the path. If the path is not a file with the
     extension, returns None.
-    '''
+    """
     split_name = os.path.splitext(os.path.split(path)[1])
     if split_name[1] == extension:
         return split_name[0]
@@ -44,12 +44,12 @@ def _parse_notebook_id(path, extension='.ipynb'):
 
 class ExchangeList(Exchange, ABCExchangeList):
     def _get_assignments(self, course_ids):
-        '''
+        """
         Returns a list of assignments. Each assignment is a dictionary
         containing the course_id and assignment_id.
 
         ``course_ids`` - A list of course IDs.
-        '''
+        """
         assignments = []
         for course_id in course_ids:
             response = self.ngshare_api_get('/assignments/{}'.format(course_id))
@@ -69,9 +69,9 @@ class ExchangeList(Exchange, ABCExchangeList):
         return assignments
 
     def _get_courses(self):
-        '''
+        """
         Returns a list of course_ids.
-        '''
+        """
 
         response = self.ngshare_api_get('/courses')
         if response is None:
@@ -81,11 +81,11 @@ class ExchangeList(Exchange, ABCExchangeList):
     def _get_feedback_checksums(
         self, course_id, assignment_id, student_id, timestamp
     ):
-        '''
+        """
         Returns the checksums of all feedback files for a specific submission.
         This is a dictionary mapping all notebook_ids to the feedback file's
         checksum.
-        '''
+        """
         url = '/feedback/{}/{}/{}'.format(course_id, assignment_id, student_id)
         params = {'list_only': 'true', 'timestamp': timestamp}
 
@@ -102,9 +102,9 @@ class ExchangeList(Exchange, ABCExchangeList):
         return checksums
 
     def _get_notebooks(self, course_id, assignment_id):
-        '''
+        """
         Returns a list of notebook_ids from the assignment.
-        '''
+        """
         url = '/assignment/{}/{}'.format(course_id, assignment_id)
         params = {'list_only': 'true'}
 
@@ -118,7 +118,7 @@ class ExchangeList(Exchange, ABCExchangeList):
         ]
 
     def _get_submissions(self, assignments, student_id=None):
-        '''
+        """
         Returns a list of submissions. Each submission is a dictionary
         containing the 'course_id', 'assignment_id', 'student_id', 'timestamp'
         and a list of 'notebooks'. Each notebook is a dictionary containing a
@@ -128,7 +128,7 @@ class ExchangeList(Exchange, ABCExchangeList):
         'assignment_id'.
         ``student_id`` - Used to specify a specific student's submissions to
         get. If None, submissions from all students are fetched if permitted.
-        '''
+        """
         submissions = []
         for assignment in assignments:
             course_id = assignment['course_id']
@@ -188,9 +188,9 @@ class ExchangeList(Exchange, ABCExchangeList):
     def _get_submission_notebooks(
         self, course_id, assignment_id, student_id, timestamp
     ):
-        '''
+        """
         Returns a list of notebook_ids from a submission.
-        '''
+        """
         url = '/submission/{}/{}/{}'.format(
             course_id, assignment_id, student_id
         )
@@ -209,9 +209,9 @@ class ExchangeList(Exchange, ABCExchangeList):
         return notebooks
 
     def _unrelease_assignment(self, course_id, assignment_id):
-        '''
+        """
         Unrelease a released assignment.
-        '''
+        """
         url = '/assignment/{}/{}'.format(course_id, assignment_id)
 
         return self.ngshare_api_delete(url)

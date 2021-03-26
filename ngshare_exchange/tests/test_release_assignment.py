@@ -38,10 +38,10 @@ class TestExchangeReleaseAssignment(TestExchange):
         self.requests_mocker.delete(url, status_code=404)
 
     def _mock_requests_release(self):
-        '''
+        """
         Mocks ngshare's GET assignments, which responds with no assignments,
         and POST assignment, which verifies the request.
-        '''
+        """
         url = '{}/assignments/{}'.format(self.base_url, self.course_id)
         response = {'success': True, 'assignments': []}
         self.requests_mocker.get(url, json=response)
@@ -52,10 +52,10 @@ class TestExchangeReleaseAssignment(TestExchange):
         self.requests_mocker.post(url, json=self._post_assignment)
 
     def _mock_requests_released(self):
-        '''
+        """
         Mocks ngshare's GET assignments, which responds with the assignment,
         and POST assignment, which responds with "Assignment already exists".
-        '''
+        """
         url = '{}/assignments/{}'.format(self.base_url, self.course_id)
         response = {'success': True, 'assignments': [self.assignment_id]}
         self.requests_mocker.get(url, json=response)
@@ -67,13 +67,13 @@ class TestExchangeReleaseAssignment(TestExchange):
         self.requests_mocker.post(url, json=response)
 
     def _mock_requests_force_rerelease(self):
-        '''
+        """
         Mocks ngshare's GET assignments, which responds with the assignment if
         DELETE assignment has not been called or no assignment otherwise, POST
         assignment, which responds with "Assignment already exists" if DELETE
         assignment has not been called or success otherwise, and DELETE
         assignment, which notes that the assignment no longer exists.
-        '''
+        """
         url = '{}/assignments/{}'.format(self.base_url, self.course_id)
         self.requests_mocker.get(url, json=self._get_assignments)
 

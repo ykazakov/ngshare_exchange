@@ -389,22 +389,17 @@ class TestExchangeList(TestExchange):
         self.list.coursedir.course_id = '*'
         self.list.start()
         output = self._read_log()
-        assert (
-            output
-            == dedent(
-                """
+        assert output == dedent(
+            """
             [INFO] Released assignments:
             [INFO] {} {}
             [INFO] {} {}
             """
-            )
-            .lstrip()
-            .format(
-                self.course_id,
-                self.assignment_id,
-                self.course_id2,
-                self.assignment_id,
-            )
+        ).lstrip().format(
+            self.course_id,
+            self.assignment_id,
+            self.course_id2,
+            self.assignment_id,
         )
 
     def test_list_released_2x2_assignment1(self):
@@ -413,22 +408,17 @@ class TestExchangeList(TestExchange):
         self.list.coursedir.assignment_id = self.assignment_id
         self.list.start()
         output = self._read_log()
-        assert (
-            output
-            == dedent(
-                """
+        assert output == dedent(
+            """
             [INFO] Released assignments:
             [INFO] {} {}
             [INFO] {} {}
             """
-            )
-            .lstrip()
-            .format(
-                self.course_id,
-                self.assignment_id,
-                self.course_id2,
-                self.assignment_id,
-            )
+        ).lstrip().format(
+            self.course_id,
+            self.assignment_id,
+            self.course_id2,
+            self.assignment_id,
         )
 
     def test_list_released_2x2_assignment2(self):
@@ -437,22 +427,17 @@ class TestExchangeList(TestExchange):
         self.list.coursedir.assignment_id = self.assignment_id2
         self.list.start()
         output = self._read_log()
-        assert (
-            output
-            == dedent(
-                """
+        assert output == dedent(
+            """
             [INFO] Released assignments:
             [INFO] {} {}
             [INFO] {} {}
             """
-            )
-            .lstrip()
-            .format(
-                self.course_id,
-                self.assignment_id2,
-                self.course_id2,
-                self.assignment_id2,
-            )
+        ).lstrip().format(
+            self.course_id,
+            self.assignment_id2,
+            self.course_id2,
+            self.assignment_id2,
         )
 
     def test_list_released_2x2(self):
@@ -460,28 +445,23 @@ class TestExchangeList(TestExchange):
         self.num_assignments = 2
         self.list.start()
         output = self._read_log()
-        assert (
-            output
-            == dedent(
-                """
+        assert output == dedent(
+            """
             [INFO] Released assignments:
             [INFO] {} {}
             [INFO] {} {}
             [INFO] {} {}
             [INFO] {} {}
             """
-            )
-            .lstrip()
-            .format(
-                self.course_id,
-                self.assignment_id,
-                self.course_id,
-                self.assignment_id2,
-                self.course_id2,
-                self.assignment_id,
-                self.course_id2,
-                self.assignment_id2,
-            )
+        ).lstrip().format(
+            self.course_id,
+            self.assignment_id,
+            self.course_id,
+            self.assignment_id2,
+            self.course_id2,
+            self.assignment_id,
+            self.course_id2,
+            self.assignment_id2,
         )
 
     def test_list_fetched(self):
@@ -489,22 +469,17 @@ class TestExchangeList(TestExchange):
         self._fetch(self.course_dir)
         self.list.start()
         output = self._read_log()
-        assert (
-            output
-            == dedent(
-                """
+        assert output == dedent(
+            """
             [INFO] Released assignments:
             [INFO] {} {} (already downloaded)
             [INFO] {} {}
             """
-            )
-            .lstrip()
-            .format(
-                self.course_id,
-                self.assignment_id,
-                self.course_id,
-                self.assignment_id2,
-            )
+        ).lstrip().format(
+            self.course_id,
+            self.assignment_id,
+            self.course_id,
+            self.assignment_id2,
         )
 
     def test_list_remove_inbound(self):
@@ -545,21 +520,16 @@ class TestExchangeList(TestExchange):
         self.list.coursedir.assignment_id = self.assignment_id
         self.list.inbound = True
         self.list.start()
-        assert (
-            self._read_log()
-            == dedent(
-                """
+        assert self._read_log() == dedent(
+            """
             [INFO] Submitted assignments:
             [INFO] {} {} {} {} (no feedback available)
             """
-            )
-            .lstrip()
-            .format(
-                self.course_id,
-                self.student_id,
-                self.assignment_id,
-                self.timestamp1,
-            )
+        ).lstrip().format(
+            self.course_id,
+            self.student_id,
+            self.assignment_id,
+            self.timestamp1,
         )
 
     def test_list_inbound_2(self):
@@ -568,26 +538,21 @@ class TestExchangeList(TestExchange):
         self.list.coursedir.assignment_id = self.assignment_id
         self.list.inbound = True
         self.list.start()
-        assert (
-            self._read_log()
-            == dedent(
-                """
+        assert self._read_log() == dedent(
+            """
             [INFO] Submitted assignments:
             [INFO] {} {} {} {} (no feedback available)
             [INFO] {} {} {} {} (no feedback available)
             """
-            )
-            .lstrip()
-            .format(
-                self.course_id,
-                self.student_id,
-                self.assignment_id,
-                self.timestamp1,
-                self.course_id,
-                self.student_id,
-                self.assignment_id,
-                self.timestamp2,
-            )
+        ).lstrip().format(
+            self.course_id,
+            self.student_id,
+            self.assignment_id,
+            self.timestamp1,
+            self.course_id,
+            self.student_id,
+            self.assignment_id,
+            self.timestamp2,
         )
 
     def test_list_inbound_no_notebooks(self):
@@ -597,24 +562,19 @@ class TestExchangeList(TestExchange):
         self.list.coursedir.assignment_id = self.assignment_id
         self.list.inbound = True
         self.list.start()
-        assert (
-            self._read_log()
-            == dedent(
-                """
+        assert self._read_log() == dedent(
+            """
             [WARNING] No notebooks found for assignment "{}" in course "{}"
             [INFO] Submitted assignments:
             [INFO] {} {} {} {} (no feedback available)
             """
-            )
-            .lstrip()
-            .format(
-                self.assignment_id,
-                self.course_id,
-                self.course_id,
-                self.student_id,
-                self.assignment_id,
-                self.timestamp1,
-            )
+        ).lstrip().format(
+            self.assignment_id,
+            self.course_id,
+            self.course_id,
+            self.student_id,
+            self.assignment_id,
+            self.timestamp1,
         )
 
     def test_list_cached_0(self):
@@ -639,21 +599,16 @@ class TestExchangeList(TestExchange):
         self.list.cached = True
         self.list.coursedir.assignment_id = self.assignment_id
         self.list.start()
-        assert (
-            self._read_log()
-            == dedent(
-                """
+        assert self._read_log() == dedent(
+            """
             [INFO] Submitted assignments:
             [INFO] {} {} {} {} (no feedback available)
             """
-            )
-            .lstrip()
-            .format(
-                self.course_id,
-                self.student_id,
-                self.assignment_id,
-                self.timestamp1,
-            )
+        ).lstrip().format(
+            self.course_id,
+            self.student_id,
+            self.assignment_id,
+            self.timestamp1,
         )
 
     def test_list_cached_2(self):
@@ -664,26 +619,21 @@ class TestExchangeList(TestExchange):
         self.list.cached = True
         self.list.coursedir.assignment_id = self.assignment_id
         self.list.start()
-        assert (
-            self._read_log()
-            == dedent(
-                """
+        assert self._read_log() == dedent(
+            """
             [INFO] Submitted assignments:
             [INFO] {} {} {} {} (no feedback available)
             [INFO] {} {} {} {} (no feedback available)
             """
-            )
-            .lstrip()
-            .format(
-                self.course_id,
-                self.student_id,
-                self.assignment_id,
-                self.timestamp1,
-                self.course_id,
-                self.student_id,
-                self.assignment_id,
-                self.timestamp2,
-            )
+        ).lstrip().format(
+            self.course_id,
+            self.student_id,
+            self.assignment_id,
+            self.timestamp1,
+            self.course_id,
+            self.student_id,
+            self.assignment_id,
+            self.timestamp2,
         )
 
     def test_list_not_in_course(self):
@@ -713,21 +663,16 @@ class TestExchangeList(TestExchange):
         self.list.remove = False
         self.list.coursedir.assignment_id = '*'
         self.list.start()
-        assert (
-            self._read_log()
-            == dedent(
-                """
+        assert self._read_log() == dedent(
+            """
             [INFO] Submitted assignments:
             [INFO] {} {} {} {} (no feedback available)
             """
-            )
-            .lstrip()
-            .format(
-                self.course_id,
-                self.student_id,
-                self.assignment_id2,
-                self.timestamp2,
-            )
+        ).lstrip().format(
+            self.course_id,
+            self.student_id,
+            self.assignment_id2,
+            self.timestamp2,
         )
 
     def test_list_cached_and_inbound(self):
@@ -744,26 +689,21 @@ class TestExchangeList(TestExchange):
         self.list.inbound = True
         self.list.coursedir.assignment_id = self.assignment_id
         self.list.start()
-        assert (
-            self._read_log()
-            == dedent(
-                """
+        assert self._read_log() == dedent(
+            """
             [INFO] Submitted assignments:
             [INFO] {} {} {} {} (feedback ready to be fetched)
             [INFO] {} {} {} {} (no feedback available)
             """
-            )
-            .lstrip()
-            .format(
-                self.course_id,
-                self.student_id,
-                self.assignment_id,
-                self.timestamp1,
-                self.course_id,
-                self.student_id,
-                self.assignment_id,
-                self.timestamp2,
-            )
+        ).lstrip().format(
+            self.course_id,
+            self.student_id,
+            self.assignment_id,
+            self.timestamp1,
+            self.course_id,
+            self.student_id,
+            self.assignment_id,
+            self.timestamp2,
         )
 
     def test_list_feedback_inbound_fetched1(self):
@@ -776,26 +716,21 @@ class TestExchangeList(TestExchange):
             self.course_dir, self.course_id, self.assignment_id, self.timestamp1
         )
         self.list.start()
-        assert (
-            self._read_log()
-            == dedent(
-                """
+        assert self._read_log() == dedent(
+            """
             [INFO] Submitted assignments:
             [INFO] {} {} {} {} (feedback already fetched)
             [INFO] {} {} {} {} (no feedback available)
             """
-            )
-            .lstrip()
-            .format(
-                self.course_id,
-                self.student_id,
-                self.assignment_id,
-                self.timestamp1,
-                self.course_id,
-                self.student_id,
-                self.assignment_id,
-                self.timestamp2,
-            )
+        ).lstrip().format(
+            self.course_id,
+            self.student_id,
+            self.assignment_id,
+            self.timestamp1,
+            self.course_id,
+            self.student_id,
+            self.assignment_id,
+            self.timestamp2,
         )
 
     def test_list_feedback_inbound_modified1(self):
@@ -820,26 +755,21 @@ class TestExchangeList(TestExchange):
         with open(feedback_path, 'a') as fetched_file:
             fetched_file.write('blahblahblah')
         self.list.start()
-        assert (
-            self._read_log()
-            == dedent(
-                """
+        assert self._read_log() == dedent(
+            """
             [INFO] Submitted assignments:
             [INFO] {} {} {} {} (feedback ready to be fetched)
             [INFO] {} {} {} {} (no feedback available)
             """
-            )
-            .lstrip()
-            .format(
-                self.course_id,
-                self.student_id,
-                self.assignment_id,
-                self.timestamp1,
-                self.course_id,
-                self.student_id,
-                self.assignment_id,
-                self.timestamp2,
-            )
+        ).lstrip().format(
+            self.course_id,
+            self.student_id,
+            self.assignment_id,
+            self.timestamp1,
+            self.course_id,
+            self.student_id,
+            self.assignment_id,
+            self.timestamp2,
         )
 
     def test_list_feedback_inbound_modified1_ready1(self):
@@ -862,26 +792,21 @@ class TestExchangeList(TestExchange):
             fetched_file.write('blahblahblah')
         self.num_feedback = 2
         self.list.start()
-        assert (
-            self._read_log()
-            == dedent(
-                """
+        assert self._read_log() == dedent(
+            """
             [INFO] Submitted assignments:
             [INFO] {} {} {} {} (feedback ready to be fetched)
             [INFO] {} {} {} {} (feedback ready to be fetched)
             """
-            )
-            .lstrip()
-            .format(
-                self.course_id,
-                self.student_id,
-                self.assignment_id,
-                self.timestamp1,
-                self.course_id,
-                self.student_id,
-                self.assignment_id,
-                self.timestamp2,
-            )
+        ).lstrip().format(
+            self.course_id,
+            self.student_id,
+            self.assignment_id,
+            self.timestamp1,
+            self.course_id,
+            self.student_id,
+            self.assignment_id,
+            self.timestamp2,
         )
 
     def test_list_feedback_inbound_fetched2(self):
@@ -898,26 +823,21 @@ class TestExchangeList(TestExchange):
         )
         self.num_feedback = 2
         self.list.start()
-        assert (
-            self._read_log()
-            == dedent(
-                """
+        assert self._read_log() == dedent(
+            """
             [INFO] Submitted assignments:
             [INFO] {} {} {} {} (feedback already fetched)
             [INFO] {} {} {} {} (feedback already fetched)
             """
-            )
-            .lstrip()
-            .format(
-                self.course_id,
-                self.student_id,
-                self.assignment_id,
-                self.timestamp1,
-                self.course_id,
-                self.student_id,
-                self.assignment_id,
-                self.timestamp2,
-            )
+        ).lstrip().format(
+            self.course_id,
+            self.student_id,
+            self.assignment_id,
+            self.timestamp1,
+            self.course_id,
+            self.student_id,
+            self.assignment_id,
+            self.timestamp2,
         )
 
     def test_list_feedback_cached_ready1(self):
@@ -930,26 +850,21 @@ class TestExchangeList(TestExchange):
         self.list.cached = True
         self.list.coursedir.assignment_id = self.assignment_id
         self.list.start()
-        assert (
-            self._read_log()
-            == dedent(
-                """
+        assert self._read_log() == dedent(
+            """
             [INFO] Submitted assignments:
             [INFO] {} {} {} {} (feedback ready to be fetched)
             [INFO] {} {} {} {} (no feedback available)
             """
-            )
-            .lstrip()
-            .format(
-                self.course_id,
-                self.student_id,
-                self.assignment_id,
-                self.timestamp1,
-                self.course_id,
-                self.student_id,
-                self.assignment_id,
-                self.timestamp2,
-            )
+        ).lstrip().format(
+            self.course_id,
+            self.student_id,
+            self.assignment_id,
+            self.timestamp1,
+            self.course_id,
+            self.student_id,
+            self.assignment_id,
+            self.timestamp2,
         )
 
     def test_list_feedback_cached_fetched1(self):
@@ -965,26 +880,21 @@ class TestExchangeList(TestExchange):
         self.list.cached = True
         self.list.coursedir.assignment_id = self.assignment_id
         self.list.start()
-        assert (
-            self._read_log()
-            == dedent(
-                """
+        assert self._read_log() == dedent(
+            """
             [INFO] Submitted assignments:
             [INFO] {} {} {} {} (feedback already fetched)
             [INFO] {} {} {} {} (no feedback available)
             """
-            )
-            .lstrip()
-            .format(
-                self.course_id,
-                self.student_id,
-                self.assignment_id,
-                self.timestamp1,
-                self.course_id,
-                self.student_id,
-                self.assignment_id,
-                self.timestamp2,
-            )
+        ).lstrip().format(
+            self.course_id,
+            self.student_id,
+            self.assignment_id,
+            self.timestamp1,
+            self.course_id,
+            self.student_id,
+            self.assignment_id,
+            self.timestamp2,
         )
 
     def test_list_feedback_cached_modified1(self):
@@ -1012,26 +922,21 @@ class TestExchangeList(TestExchange):
         with open(feedback_path, 'a') as fetched_file:
             fetched_file.write('blahblahblah')
         self.list.start()
-        assert (
-            self._read_log()
-            == dedent(
-                """
+        assert self._read_log() == dedent(
+            """
             [INFO] Submitted assignments:
             [INFO] {} {} {} {} (feedback ready to be fetched)
             [INFO] {} {} {} {} (no feedback available)
             """
-            )
-            .lstrip()
-            .format(
-                self.course_id,
-                self.student_id,
-                self.assignment_id,
-                self.timestamp1,
-                self.course_id,
-                self.student_id,
-                self.assignment_id,
-                self.timestamp2,
-            )
+        ).lstrip().format(
+            self.course_id,
+            self.student_id,
+            self.assignment_id,
+            self.timestamp1,
+            self.course_id,
+            self.student_id,
+            self.assignment_id,
+            self.timestamp2,
         )
 
     def test_list_feedback_cached_ready2(self):
@@ -1057,26 +962,21 @@ class TestExchangeList(TestExchange):
             fetched_file.write('blahblahblah')
         self.num_feedback = 2
         self.list.start()
-        assert (
-            self._read_log()
-            == dedent(
-                """
+        assert self._read_log() == dedent(
+            """
             [INFO] Submitted assignments:
             [INFO] {} {} {} {} (feedback ready to be fetched)
             [INFO] {} {} {} {} (feedback ready to be fetched)
             """
-            )
-            .lstrip()
-            .format(
-                self.course_id,
-                self.student_id,
-                self.assignment_id,
-                self.timestamp1,
-                self.course_id,
-                self.student_id,
-                self.assignment_id,
-                self.timestamp2,
-            )
+        ).lstrip().format(
+            self.course_id,
+            self.student_id,
+            self.assignment_id,
+            self.timestamp1,
+            self.course_id,
+            self.student_id,
+            self.assignment_id,
+            self.timestamp2,
         )
 
     def test_list_feedback_cached_fetched2(self):
@@ -1096,26 +996,21 @@ class TestExchangeList(TestExchange):
         self.list.coursedir.assignment_id = self.assignment_id
         self.num_feedback = 2
         self.list.start()
-        assert (
-            self._read_log()
-            == dedent(
-                """
+        assert self._read_log() == dedent(
+            """
             [INFO] Submitted assignments:
             [INFO] {} {} {} {} (feedback already fetched)
             [INFO] {} {} {} {} (feedback already fetched)
             """
-            )
-            .lstrip()
-            .format(
-                self.course_id,
-                self.student_id,
-                self.assignment_id,
-                self.timestamp1,
-                self.course_id,
-                self.student_id,
-                self.assignment_id,
-                self.timestamp2,
-            )
+        ).lstrip().format(
+            self.course_id,
+            self.student_id,
+            self.assignment_id,
+            self.timestamp1,
+            self.course_id,
+            self.student_id,
+            self.assignment_id,
+            self.timestamp2,
         )
 
     def test_list_path_includes_course(self):

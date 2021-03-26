@@ -149,14 +149,14 @@ class Exchange(ABCExchange):
     ).tag(config=True)
 
     def decode_dir(self, src_dir, dest_dir, ignore=None, noclobber=False):
-        '''
-       decode an encoded directory tree and saw the decoded files to des
-       src_dir: en encoded directory tree
-       dest: destination directory path for decoded files
-       ignore: a function that returns true if the file should be ignored,
-       false otherwise. This function takes as arguments the file directory path,
-       file name, and file size in KB.
-       '''
+        """
+        decode an encoded directory tree and saw the decoded files to des
+        src_dir: en encoded directory tree
+        dest: destination directory path for decoded files
+        ignore: a function that returns true if the file should be ignored,
+        false otherwise. This function takes as arguments the file directory path,
+        file name, and file size in KB.
+        """
         # check if the destination directory exists
         if not os.path.exists(dest_dir):
             Path(dest_dir).mkdir(parents=True)
@@ -245,12 +245,12 @@ class Exchange(ABCExchange):
         raise ExchangeError(msg)
 
     def do_copy(self, src, dest, log=None):
-        '''
+        """
         Copy the src dir to the dest dir, omitting excluded
         file/directories, non included files, and too large files, as
         specified by the options coursedir.ignore, coursedir.include
         and coursedir.max_file_size.
-        '''
+        """
         shutil.copytree(
             src,
             dest,
@@ -263,7 +263,7 @@ class Exchange(ABCExchange):
         )
 
     def ignore_patterns(self):
-        '''
+        """
         Returns a function which decides whether or not a file should be
         ignored. The function has the signature
             ignore_patterns(directory, filename, filesize) -> bool
@@ -273,7 +273,7 @@ class Exchange(ABCExchange):
         will be ignored. If self.coursedir.include exists, filenames not
         matching the patterns will be ignored. If self.coursedir.max_file_size
         exists, files exceeding that size in kilobytes will be ignored.
-        '''
+        """
         exclude = self.coursedir.ignore
         include = self.coursedir.include
         max_file_size = self.coursedir.max_file_size

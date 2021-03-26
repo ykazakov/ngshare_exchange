@@ -24,10 +24,10 @@ class TestExchangeSubmit(TestExchange):
     timestamp = 'some timestamp'
 
     def _mock_request_assignment(self):
-        '''
+        """
         Mocks ngshare's GET assignment with list_only, which responds with the
         assignment.
-        '''
+        """
         url = '{}/assignment/{}/{}'.format(
             self.base_url, self.course_id, self.assignment_id
         )
@@ -55,10 +55,10 @@ class TestExchangeSubmit(TestExchange):
         self._mock_request_assignment()
 
     def _mock_requests_submit_2(self):
-        '''
+        """
         Mocks ngshare's POST submission, which verifies the request for the
         second course.
-        '''
+        """
         url = '{}/submission/{}/{}'.format(
             self.base_url, self.course_id2, self.assignment_id
         )
@@ -67,10 +67,10 @@ class TestExchangeSubmit(TestExchange):
         self._mock_request_assignment()
 
     def _mock_requests_submit_size(self):
-        '''
+        """
         Mocks ngshare's POST submission, which verifies the request has all and
         only the files which are within the file size limit.
-        '''
+        """
         url = '{}/submission/{}/{}'.format(
             self.base_url, self.course_id, self.assignment_id
         )

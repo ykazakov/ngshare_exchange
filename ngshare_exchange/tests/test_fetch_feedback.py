@@ -16,9 +16,9 @@ class TestExchangeFetchFeedback(TestExchange):
     timestamp = 'some_timestamp'
 
     def _mock_bad_feedback(self):
-        '''
+        """
         Mock's ngshare's GET feedback, which responds with a bad response.
-        '''
+        """
 
         url = '{}/feedback/{}/{}/{}'.format(
             self.base_url, self.course_id, self.assignment_id, self.student_id
@@ -34,9 +34,9 @@ class TestExchangeFetchFeedback(TestExchange):
         self.requests_mocker.get(url, json=response)
 
     def _mock_requests_fetch(self):
-        '''
+        """
         Mock's ngshare's GET feedback, which responds with the feedback file.
-        '''
+        """
 
         url = '{}/feedback/{}/{}/{}'.format(
             self.base_url, self.course_id, self.assignment_id, self.student_id

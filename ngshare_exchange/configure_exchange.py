@@ -9,13 +9,13 @@ from .collect import ExchangeCollect
 
 
 def configureExchange(c, ngshare_url=None):
-    '''Modifies nbgrader configuration to use ngshare_exchange as the exchange.
+    """Modifies nbgrader configuration to use ngshare_exchange as the exchange.
     c is the nbgrader config you get using get_config.
     To use, simply specify the following in your nbgrader_config.py file:
 
     import ngshare_exchage
     ngshare_exchange.configureExchange(get_config())
-    '''
+    """
     c.ExchangeFactory.exchange = Exchange
     c.ExchangeFactory.fetch_assignment = ExchangeFetchAssignment
     c.ExchangeFactory.fetch_feedback = ExchangeFetchFeedback

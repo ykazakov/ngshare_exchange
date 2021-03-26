@@ -14,9 +14,9 @@ from .. import ExchangeFetchAssignment
 
 class TestExchangeFetchAssignment(TestExchange):
     def _mock_requests_fetch(self):
-        '''
+        """
         Mock's ngshare's GET assignment, which responds with the assignment.
-        '''
+        """
         url = '{}/assignment/{}/{}'.format(
             self.base_url, self.course_id, self.assignment_id
         )
@@ -38,10 +38,10 @@ class TestExchangeFetchAssignment(TestExchange):
         self.requests_mocker.get(url, json=response)
 
     def _mock_requests_fetch_2(self):
-        '''
+        """
         Mock's ngshare's GET assignment, which responds with the assignment with
         two notebooks.
-        '''
+        """
         url = '{}/assignment/{}/{}'.format(
             self.base_url, self.course_id, self.assignment_id
         )
@@ -68,10 +68,10 @@ class TestExchangeFetchAssignment(TestExchange):
         self.requests_mocker.get(url, json=response)
 
     def _mock_requests_fetch_bad_response(self):
-        '''
+        """
         Mock's ngshare's GET assignment, which responds with the assignment with
         bad encoding.
-        '''
+        """
         url = '{}/assignment/{}/{}'.format(
             self.base_url, self.course_id, self.assignment_id
         )
