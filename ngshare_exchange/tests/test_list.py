@@ -271,7 +271,7 @@ class TestExchangeList(TestExchange):
     def _read_log(self):
         log_records = [
             '[{}] {}\n'.format(x.levelname, x.getMessage())
-            for x in self.caplog.get_records('call')
+            for x in self.caplog.records
         ]
         self.caplog.clear()
         return ''.join(log_records)
