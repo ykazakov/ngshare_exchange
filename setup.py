@@ -42,8 +42,7 @@ setuptools.setup(
         'rapidfuzz',
         'traitlets',
         'jupyter_core',
-        #'nbgrader>=0.7.0',  # unfortunately not out yet?
-        'nbgrader==0.7.0.dev0',
+        'nbgrader>=0.7.0',
     ],
     entry_points={
         'console_scripts': [
