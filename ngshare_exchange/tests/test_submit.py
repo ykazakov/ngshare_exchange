@@ -43,7 +43,7 @@ class TestExchangeSubmit(TestExchange):
         self.requests_mocker.get(pattern, json=response)
 
     def _mock_requests_submit(self, extra=False):
-        ''' Mock's ngshare's POST submission, which verifies the request. '''
+        '''Mock's ngshare's POST submission, which verifies the request.'''
         url = '{}/submission/{}/{}'.format(
             self.base_url, self.course_id, self.assignment_id
         )
