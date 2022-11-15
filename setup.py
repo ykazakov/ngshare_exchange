@@ -37,11 +37,11 @@ setuptools.setup(
         "License :: OSI Approved :: BSD License",
         "Operating System :: POSIX :: Linux",
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.7',
     install_requires=[
         'rapidfuzz',
         'traitlets',
-        'jupyter_core<5.0.0',
+        'jupyter_core<4.11.2',
         'nbgrader>=0.7.0',
     ],
     entry_points={
