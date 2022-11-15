@@ -672,9 +672,9 @@ class TestCourseManagement:
         del os.environ[jhu]
         assert username1 == username2
 
-    def test_no_ngshare_url(self, tmpdir_factory):
+    def test_no_ngshare_url(self, tmp_path_factory):
         url = 'http://ngshare.url'
-        tmp_dir = tmpdir_factory.mktemp(self.course_id)
+        tmp_dir = tmp_path_factory.mktemp(self.course_id)
         os.chdir(tmp_dir)
         config_file = Path(tmp_dir) / 'nbgrader_config.py'
         config = '\n'.join(
@@ -689,8 +689,8 @@ class TestCourseManagement:
         del cm._ngshare_url
         assert url == cm.ngshare_url()
 
-    def test_no_ngshare_url_no_config(self, tmpdir_factory):
-        tmp_dir = tmpdir_factory.mktemp(self.course_id)
+    def test_no_ngshare_url_no_config(self, tmp_path_factory):
+        tmp_dir = tmp_path_factory.mktemp(self.course_id)
         os.chdir(tmp_dir)
         del cm._ngshare_url
         with pytest.raises(SystemExit):
