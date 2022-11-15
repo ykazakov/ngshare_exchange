@@ -7,7 +7,7 @@ import re
 import shutil
 
 from _pytest.logging import LogCaptureFixture
-from _pytest.tmpdir import TempPathFactory
+from _pytest.legacypath import TempdirFactory
 import pytest
 from requests import PreparedRequest
 from textwrap import dedent
@@ -299,7 +299,7 @@ class TestExchangeList(TestExchange):
 
     @pytest.fixture(autouse=True)
     def init_submit(
-        self, caplog: LogCaptureFixture, tmpdir_factory: TempPathFactory
+        self, caplog: LogCaptureFixture, tmpdir_factory: TempdirFactory
     ):
         self.caplog = caplog
         self.course_dir2 = Path(
