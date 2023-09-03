@@ -171,10 +171,9 @@ class Exchange(ABCExchange):
             if noclobber and os.path.isfile(dest_path):
                 continue
             # the file could be in a subdirectory, check if directory exists
-            if not os.path.exists(dir_name) and dir_name != '':
-                subdir = os.path.join(dest_dir, dir_name)
-                if not os.path.exists(subdir):
-                    os.makedirs(subdir, exist_ok=True)
+            subdir = os.path.join(dest_dir, dir_name)
+            if not os.path.exists(subdir) and dir_name != '':
+                os.makedirs(subdir, exist_ok=True)
                 dest_path = os.path.join(subdir, file_name)
 
             self.log.info('Decoding: {}'.format(dest_path))
