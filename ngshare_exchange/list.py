@@ -78,6 +78,29 @@ class ExchangeList(Exchange, ABCExchangeList):
             return None
         return response['courses']
 
+    def _get_solutions(self, course_ids):
+        """
+        Returns a list of released solutions. Each solution is a dictionary
+        containing the course_id and assignment_id.
+
+        ``course_ids`` - A list of course IDs.
+        """
+        solutions = []
+        for course_id in course_ids:
+            response = self.ngshare_api_get('/solutions/{}'.format(course_id))
+            if response is None:
+                self.log.error(
+                    'Failed to get solutions from course {}.'.format(course_id)
+                )
+                continue
+
+            solutions += [
+                {'course_id': course_id, 'assignment_id': x}
+                for x in response['solutions']
+            ]
+
+        return solutions
+
     def _get_feedback_checksums(
         self, course_id, assignment_id, student_id, timestamp
     ):
@@ -106,6 +129,22 @@ class ExchangeList(Exchange, ABCExchangeList):
         Returns a list of notebook_ids from the assignment.
         """
         url = '/assignment/{}/{}'.format(course_id, assignment_id)
+        params = {'list_only': 'true'}
+
+        response = self.ngshare_api_get(url, params)
+        if response is None:
+            return None
+
+        return [
+            os.path.splitext(os.path.split(x['path'])[1])[0]
+            for x in response['files']
+        ]
+
+    def _get_solution_notebooks(self, course_id, assignment_id):
+        """
+        Returns a list of notebook_ids from the solution.
+        """
+        url = '/solution/{}/{}'.format(course_id, assignment_id)
         params = {'list_only': 'true'}
 
         response = self.ngshare_api_get(url, params)
@@ -216,6 +255,14 @@ class ExchangeList(Exchange, ABCExchangeList):
 
         return self.ngshare_api_delete(url)
 
+    def _unrelease_solution(self, course_id, assignment_id):
+        """
+        Unrelease a released solution.
+        """
+        url = '/solution/{}/{}'.format(course_id, assignment_id)
+
+        return self.ngshare_api_delete(url)
+
     def init_src(self):
         pass
 
@@ -239,7 +286,10 @@ class ExchangeList(Exchange, ABCExchangeList):
         else:
             courses = [course_id]
         if assignment_id == '*':
-            assignments = self._get_assignments(courses)
+            if self.solution:
+                assignments = self._get_solutions(courses)
+            else:
+                assignments = self._get_assignments(courses)
         else:
             assignments = [
                 {'course_id': course, 'assignment_id': assignment_id}
@@ -301,6 +351,12 @@ class ExchangeList(Exchange, ABCExchangeList):
             msg += ' (already downloaded)'
         return msg
 
+    def format_solution(self, info):
+        msg = "{course_id} {assignment_id}".format(**info)
+        if os.path.exists(os.path.join(info['assignment_id'], 'solution')):
+            msg += " (already downloaded)"
+        return msg
+
     def copy_files(self):
         pass
 
@@ -333,6 +389,13 @@ class ExchangeList(Exchange, ABCExchangeList):
                 info['status'] = 'submitted'
                 if self.cached:
                     info['path'] = assignment
+            elif self.solution:
+                solution_dir = os.path.join(assignment_dir, 'solution')
+                if os.path.exists(solution_dir):
+                    info['status'] = 'fetched_solution'
+                    info['path'] = os.path.abspath(solution_dir)
+                else:
+                    info['status'] = 'released_solution'
             elif os.path.exists(assignment_dir):
                 info['status'] = 'fetched'
                 info['path'] = os.path.abspath(assignment_dir)
@@ -342,7 +405,11 @@ class ExchangeList(Exchange, ABCExchangeList):
             if self.remove:
                 info['status'] = 'removed'
 
-            if self.cached or info['status'] == 'fetched':
+            if (
+                self.cached
+                or info['status'] == 'fetched'
+                or info['status'] == 'fetched_solution'
+            ):
                 notebooks = sorted(
                     glob.glob(os.path.join(info['path'], '*.ipynb'))
                 )
@@ -352,6 +419,16 @@ class ExchangeList(Exchange, ABCExchangeList):
                     return nb['notebook_id']
 
                 notebooks = sorted(assignment['notebooks'], key=nb_key)
+            elif self.solution:
+                notebooks = self._get_solution_notebooks(
+                    info['course_id'], info['assignment_id']
+                )
+                if notebooks is None:
+                    self.log.error(
+                        'Failed to get list of solution ' 'notebooks.'
+                    )
+                    notebooks = []
+                notebooks = sorted(notebooks)
             else:
                 notebooks = self._get_notebooks(
                     info['course_id'], info['assignment_id']
@@ -383,7 +460,11 @@ class ExchangeList(Exchange, ABCExchangeList):
 
             info['notebooks'] = []
             for notebook in notebooks:
-                if self.cached or info['status'] == 'fetched':
+                if (
+                    self.cached
+                    or info['status'] == 'fetched'
+                    or info['status'] == 'fetched_solution'
+                ):
                     nb_info = {
                         'notebook_id': os.path.splitext(
                             os.path.split(notebook)[1]
@@ -392,6 +473,14 @@ class ExchangeList(Exchange, ABCExchangeList):
                     }
                 elif self.inbound:
                     nb_info = {'notebook_id': notebook['notebook_id']}
+                elif (
+                    info['status'] == 'fetched'
+                    or info['status'] == 'fetched_solution'
+                ):
+                    nb_info = {
+                        'notebook_id': notebook,
+                        'path': os.path.abspath(notebook),
+                    }
                 else:
                     nb_info = {'notebook_id': notebook}
                 if info['status'] != 'submitted':
@@ -520,6 +609,10 @@ class ExchangeList(Exchange, ABCExchangeList):
             for assignment in assignments:
                 for info in assignment['submissions']:
                     self.log.info(self.format_inbound_assignment(info))
+        elif self.solution:
+            self.log.info("Released solutions:")
+            for info in assignments:
+                self.log.info(self.format_solution(info))
         else:
             self.log.info('Released assignments:')
             for info in assignments:
@@ -536,6 +629,10 @@ class ExchangeList(Exchange, ABCExchangeList):
             for assignment in assignments:
                 for info in assignment['submissions']:
                     self.log.info(self.format_inbound_assignment(info))
+        elif self.solution:
+            self.log.info("Removing released solutions:")
+            for info in assignments:
+                self.log.info(self.format_solution(info))
         else:
             self.log.info('Removing released assignments:')
             for info in assignments:
@@ -548,6 +645,17 @@ class ExchangeList(Exchange, ABCExchangeList):
             self.log.warning(
                 'ngshare does not support removing submissions.'
             )  # TODO
+        elif self.solution:
+            for assignment in self.assignments:
+                retvalue = self._unrelease_solution(
+                    assignment['course_id'], assignment['assignment_id']
+                )
+                if retvalue is None:
+                    self.log.error(
+                        'Failed to remove solution {}/{}.'.format(
+                            assignment['course_id'], assignment['assignment_id']
+                        )
+                    )
         else:
             for assignment in self.assignments:
                 retvalue = self._unrelease_assignment(

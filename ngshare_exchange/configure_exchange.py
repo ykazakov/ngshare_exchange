@@ -1,8 +1,10 @@
 from .exchange import Exchange
 from .fetch_assignment import ExchangeFetchAssignment
 from .fetch_feedback import ExchangeFetchFeedback
+from .fetch_solution import ExchangeFetchSolution
 from .release_assignment import ExchangeReleaseAssignment
 from .release_feedback import ExchangeReleaseFeedback
+from .release_solution import ExchangeReleaseSolution
 from .list import ExchangeList
 from .submit import ExchangeSubmit
 from .collect import ExchangeCollect
@@ -19,8 +21,10 @@ def configureExchange(c, ngshare_url=None):
     c.ExchangeFactory.exchange = Exchange
     c.ExchangeFactory.fetch_assignment = ExchangeFetchAssignment
     c.ExchangeFactory.fetch_feedback = ExchangeFetchFeedback
+    c.ExchangeFactory.fetch_solution = ExchangeFetchSolution
     c.ExchangeFactory.release_assignment = ExchangeReleaseAssignment
     c.ExchangeFactory.release_feedback = ExchangeReleaseFeedback
+    c.ExchangeFactory.release_solution = ExchangeReleaseSolution
     c.ExchangeFactory.list = ExchangeList
     c.ExchangeFactory.submit = ExchangeSubmit
     c.ExchangeFactory.collect = ExchangeCollect

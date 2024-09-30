@@ -1,30 +1,14 @@
 #!/usr/bin/python
 import os
+from pathlib import Path
 
 from nbgrader.exchange.abc import (
-    ExchangeFetchAssignment as ABCExchangeFetchAssignment,
+    ExchangeFetchSolution as ABCExchangeFetchSolution,
 )
 from .exchange import Exchange
 
 
-class ExchangeFetchAssignment(Exchange, ABCExchangeFetchAssignment):
-    def _load_config(self, cfg, **kwargs):
-        if 'ExchangeFetch' in cfg:
-            self.log.warning(
-                'Use ExchangeFetchAssignment in config, not ExchangeFetch. Outdated config:\n%s',
-                '\n'.join(
-                    'ExchangeFetch.{key} = {value!r}'.format(
-                        key=key, value=value
-                    )
-                    for (key, value) in cfg.ExchangeFetchAssignment.items()
-                ),
-            )
-
-            cfg.ExchangeFetchAssignment.merge(cfg.ExchangeFetch)
-            del cfg.ExchangeFetch
-
-        super(ExchangeFetchAssignment, self)._load_config(cfg, **kwargs)
-
+class ExchangeFetchSolution(Exchange, ABCExchangeFetchSolution):
     def init_src(self):
         if self.coursedir.course_id == '':
             self.fail('No course id specified. Re-run with --course flag.')
@@ -33,7 +17,7 @@ class ExchangeFetchAssignment(Exchange, ABCExchangeFetchAssignment):
         ):
             self.fail('You do not have access to this course.')
 
-        self.src_path = '/assignment/{}/{}'.format(
+        self.src_path = '/solution/{}/{}'.format(
             self.coursedir.course_id, self.coursedir.assignment_id
         )
 
@@ -45,14 +29,12 @@ class ExchangeFetchAssignment(Exchange, ABCExchangeFetchAssignment):
         else:
             root = self.coursedir.assignment_id
         self.dest_path = os.path.abspath(
-            os.path.join(self.assignment_dir, root)
+            os.path.join(self.assignment_dir, root, 'solution')
         )
-        if os.path.isdir(self.dest_path) and not self.replace_missing_files:
-            self.fail(
-                'You already have a copy of the assignment in this directory: {}'.format(
-                    root
-                )
-            )
+
+        # check if feedback folder exists
+        if not os.path.exists(self.dest_path):
+            Path(self.dest_path).mkdir(parents=True)
 
     def do_copy(self, files):
         '''Copy the src dir to the dest dir omitting the self.coursedir.ignore globs.'''
@@ -83,4 +65,4 @@ class ExchangeFetchAssignment(Exchange, ABCExchangeFetchAssignment):
             try:
                 self.do_copy(response['files'])
             except:
-                self.fail('Could not decode the assignment')
+                self.fail('Could not decode the solution')
