@@ -383,7 +383,7 @@ class ExchangeList(Exchange, ABCExchangeList):
 
             info['notebooks'] = []
             for notebook in notebooks:
-                if self.cached:
+                if self.cached or info['status'] == 'fetched':
                     nb_info = {
                         'notebook_id': os.path.splitext(
                             os.path.split(notebook)[1]
@@ -392,11 +392,6 @@ class ExchangeList(Exchange, ABCExchangeList):
                     }
                 elif self.inbound:
                     nb_info = {'notebook_id': notebook['notebook_id']}
-                elif info['status'] == 'fetched':
-                    nb_info = {
-                        'notebook_id': notebook,
-                        'path': os.path.abspath(notebook),
-                    }
                 else:
                     nb_info = {'notebook_id': notebook}
                 if info['status'] != 'submitted':
