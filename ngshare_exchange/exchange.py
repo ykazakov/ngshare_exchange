@@ -21,7 +21,6 @@ import json
 
 
 class Exchange(ABCExchange):
-
     username = (
         os.environ['JUPYTERHUB_USER']
         if 'JUPYTERHUB_USER' in os.environ
@@ -38,7 +37,6 @@ class Exchange(ABCExchange):
 
     @property
     def ngshare_url(self):
-
         if self._ngshare_url:
             return self._ngshare_url
         if 'PROXY_PUBLIC_SERVICE_HOST' in os.environ:
@@ -189,7 +187,7 @@ class Exchange(ABCExchange):
 
     def encode_dir(self, src_dir, ignore=None):
         encoded_files = []
-        for (subdir, dirs, files) in os.walk(src_dir):
+        for subdir, dirs, files in os.walk(src_dir):
             for file_name in files:
                 file_path = subdir + os.sep + file_name
                 data_bytes = open(file_path, 'rb').read()

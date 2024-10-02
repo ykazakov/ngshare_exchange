@@ -7,6 +7,7 @@ import json
 import argparse
 from urllib.parse import quote
 
+
 # https://www.geeksforgeeks.org/print-colors-python-terminal/
 def prRed(skk, exit=True):
     print('\033[91m {}\033[00m'.format(skk))
@@ -83,7 +84,6 @@ def check_status_code(response):
 
 
 def check_message(response):
-
     response = response.json()
     if not response['success']:
         prRed(response['message'])
@@ -460,12 +460,10 @@ def parse_args(argv):
 
 
 def main(argv=None):
-
     argv = argv or sys.argv[1:]
     args = parse_args(argv)
     args.func(args)
 
 
 if __name__ == '__main__':
-
     sys.exit(main())

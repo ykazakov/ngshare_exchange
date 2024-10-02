@@ -12,7 +12,6 @@ from .. import ExchangeFetchFeedback
 
 
 class TestExchangeFetchFeedback(TestExchange):
-
     timestamp = 'some_timestamp'
 
     def _mock_bad_feedback(self):
@@ -70,7 +69,6 @@ class TestExchangeFetchFeedback(TestExchange):
         assignment_id=TestExchange.assignment_id,
         student_id=TestExchange.student_id,
     ):
-
         retvalue = self._new_exchange_object(
             ExchangeFetchFeedback, course_id, assignment_id, student_id
         )
@@ -122,7 +120,6 @@ class TestExchangeFetchFeedback(TestExchange):
             assert issubclass(type(e), ExchangeError)
 
     def test_fetch(self):
-
         # set chache folder
 
         submission_name = '{}+{}+{}'.format(
@@ -150,7 +147,6 @@ class TestExchangeFetchFeedback(TestExchange):
                 assert actual_file.read() == reference_file.read()
 
     def test_fetch_path_includes_course(self):
-
         # set chache folder
 
         submission_name = '{}+{}+{}'.format(
