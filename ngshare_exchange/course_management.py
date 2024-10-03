@@ -7,6 +7,7 @@ import json
 import argparse
 from urllib.parse import quote
 
+
 # https://www.geeksforgeeks.org/print-colors-python-terminal/
 def prRed(skk, exit=True):
     print('\033[91m {}\033[00m'.format(skk))

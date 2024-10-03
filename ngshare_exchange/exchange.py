@@ -189,7 +189,7 @@ class Exchange(ABCExchange):
 
     def encode_dir(self, src_dir, ignore=None):
         encoded_files = []
-        for (subdir, dirs, files) in os.walk(src_dir):
+        for subdir, dirs, files in os.walk(src_dir):
             for file_name in files:
                 file_path = subdir + os.sep + file_name
                 data_bytes = open(file_path, 'rb').read()
