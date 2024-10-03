@@ -10,7 +10,6 @@ from .exchange import Exchange
 
 
 class ExchangeReleaseAssignment(Exchange, ABCExchangeReleaseAssignment):
-
     force = Bool(
         False, help='Force overwrite existing files in the exchange.'
     ).tag(config=True)
@@ -44,7 +43,6 @@ class ExchangeReleaseAssignment(Exchange, ABCExchangeReleaseAssignment):
                 self.coursedir.assignment_id,
             )
             if os.path.isdir(source):
-
                 # Looks like the instructor forgot to assign
                 self.fail(
                     'Assignment found in "{}" but not "{}", run `nbgrader generate_assignment` first.'.format(

@@ -11,6 +11,7 @@ from _pytest.legacypath import TempdirFactory
 import pytest
 from requests import PreparedRequest
 from textwrap import dedent
+from unittest import TestCase
 
 from .base import parse_body, TestExchange
 from nbgrader.auth import Authenticator
@@ -18,7 +19,7 @@ from nbgrader.exchange import ExchangeError
 from .. import ExchangeList
 
 
-class TestExchangeList(TestExchange):
+class TestExchangeList(TestExchange, TestCase):
     course_id2 = 'xyz200'
     assignment_id2 = 'ps2'
     timestamp1 = '2000-02-03 12:34:56.789012 UTC'
@@ -351,7 +352,18 @@ class TestExchangeList(TestExchange):
         self.num_courses = 2
         self.num_assignments = 1
         self.list.coursedir.course_id = self.course_id
-        self.list.start()
+        data = self.list.start()
+        self.assertEqual(
+            data,
+            [
+                {
+                    "course_id": self.course_id,
+                    "assignment_id": self.assignment_id,
+                    "status": "released",
+                    "notebooks": [{"notebook_id": self.notebook_id}],
+                },
+            ],
+        )
         output = self._read_log()
         assert (
             output
@@ -369,7 +381,18 @@ class TestExchangeList(TestExchange):
         self.num_courses = 2
         self.num_assignments = 1
         self.list.coursedir.course_id = self.course_id2
-        self.list.start()
+        data = self.list.start()
+        self.assertEqual(
+            data,
+            [
+                {
+                    "course_id": self.course_id2,
+                    "assignment_id": self.assignment_id,
+                    "status": "released",
+                    "notebooks": [{"notebook_id": self.notebook_id}],
+                },
+            ],
+        )
         output = self._read_log()
         assert (
             output
@@ -387,7 +410,19 @@ class TestExchangeList(TestExchange):
         self.num_courses = 2
         self.num_assignments = 1
         self.list.coursedir.course_id = '*'
-        self.list.start()
+        data = self.list.start()
+        self.assertEqual(
+            data,
+            [
+                {
+                    "course_id": course_id,
+                    "assignment_id": self.assignment_id,
+                    "status": "released",
+                    "notebooks": [{"notebook_id": self.notebook_id}],
+                }
+                for course_id in (self.course_id, self.course_id2)
+            ],
+        )
         output = self._read_log()
         assert (
             output
@@ -411,7 +446,19 @@ class TestExchangeList(TestExchange):
         self.num_courses = 2
         self.num_assignments = 2
         self.list.coursedir.assignment_id = self.assignment_id
-        self.list.start()
+        data = self.list.start()
+        self.assertEqual(
+            data,
+            [
+                {
+                    "course_id": course_id,
+                    "assignment_id": self.assignment_id,
+                    "status": "released",
+                    "notebooks": [{"notebook_id": self.notebook_id}],
+                }
+                for course_id in (self.course_id, self.course_id2)
+            ],
+        )
         output = self._read_log()
         assert (
             output
@@ -435,7 +482,19 @@ class TestExchangeList(TestExchange):
         self.num_courses = 2
         self.num_assignments = 2
         self.list.coursedir.assignment_id = self.assignment_id2
-        self.list.start()
+        data = self.list.start()
+        self.assertEqual(
+            data,
+            [
+                {
+                    "course_id": course_id,
+                    "assignment_id": self.assignment_id2,
+                    "status": "released",
+                    "notebooks": [{"notebook_id": self.notebook_id}],
+                }
+                for course_id in (self.course_id, self.course_id2)
+            ],
+        )
         output = self._read_log()
         assert (
             output
@@ -458,7 +517,20 @@ class TestExchangeList(TestExchange):
     def test_list_released_2x2(self):
         self.num_courses = 2
         self.num_assignments = 2
-        self.list.start()
+        data = self.list.start()
+        self.assertEqual(
+            data,
+            [
+                {
+                    "course_id": course_id,
+                    "assignment_id": assignment_id,
+                    "status": "released",
+                    "notebooks": [{"notebook_id": self.notebook_id}],
+                }
+                for course_id in (self.course_id, self.course_id2)
+                for assignment_id in (self.assignment_id, self.assignment_id2)
+            ],
+        )
         output = self._read_log()
         assert (
             output
@@ -487,7 +559,34 @@ class TestExchangeList(TestExchange):
     def test_list_fetched(self):
         self.num_assignments = 2
         self._fetch(self.course_dir)
-        self.list.start()
+        data = self.list.start()
+        self.assertEqual(
+            data,
+            [
+                {
+                    "course_id": self.course_id,
+                    "assignment_id": self.assignment_id,
+                    "status": "fetched",
+                    "path": (self.course_dir / self.assignment_id).as_posix(),
+                    "notebooks": [
+                        {
+                            "notebook_id": self.notebook_id,
+                            "path": (
+                                self.course_dir
+                                / self.assignment_id
+                                / (self.notebook_id + '.ipynb')
+                            ).as_posix(),
+                        }
+                    ],
+                },
+                {
+                    "course_id": self.course_id,
+                    "assignment_id": self.assignment_id2,
+                    "status": "released",
+                    "notebooks": [{"notebook_id": self.notebook_id}],
+                },
+            ],
+        )
         output = self._read_log()
         assert (
             output
@@ -529,7 +628,8 @@ class TestExchangeList(TestExchange):
         self.num_submissions = 0
         self.list.coursedir.assignment_id = self.assignment_id
         self.list.inbound = True
-        self.list.start()
+        data = self.list.start()
+        assert data == []
         assert (
             self._read_log()
             == dedent(
@@ -544,7 +644,40 @@ class TestExchangeList(TestExchange):
         self.num_submissions = 1
         self.list.coursedir.assignment_id = self.assignment_id
         self.list.inbound = True
-        self.list.start()
+        data = self.list.start()
+        self.assertEqual(
+            data,
+            [
+                {
+                    "course_id": self.course_id,
+                    "student_id": self.student_id,
+                    "assignment_id": self.assignment_id,
+                    "status": "submitted",
+                    "submissions": [
+                        {
+                            "course_id": self.course_id,
+                            "student_id": self.student_id,
+                            "assignment_id": self.assignment_id,
+                            "timestamp": self.timestamp1,
+                            "status": "submitted",
+                            "notebooks": [
+                                {
+                                    "notebook_id": "p1",
+                                    "has_local_feedback": False,
+                                    "has_exchange_feedback": False,
+                                    "local_feedback_path": None,
+                                    "feedback_updated": False,
+                                }
+                            ],
+                            "has_local_feedback": False,
+                            "has_exchange_feedback": False,
+                            "feedback_updated": False,
+                            "local_feedback_path": None,
+                        }
+                    ],
+                },
+            ],
+        )
         assert (
             self._read_log()
             == dedent(
@@ -567,7 +700,41 @@ class TestExchangeList(TestExchange):
         self.num_submissions = 2
         self.list.coursedir.assignment_id = self.assignment_id
         self.list.inbound = True
-        self.list.start()
+        data = self.list.start()
+        self.assertEqual(
+            data,
+            [
+                {
+                    "course_id": self.course_id,
+                    "student_id": self.student_id,
+                    "assignment_id": self.assignment_id,
+                    "status": "submitted",
+                    "submissions": [
+                        {
+                            "course_id": self.course_id,
+                            "student_id": self.student_id,
+                            "assignment_id": self.assignment_id,
+                            "timestamp": timestamp,
+                            "status": "submitted",
+                            "notebooks": [
+                                {
+                                    "notebook_id": "p1",
+                                    "has_local_feedback": False,
+                                    "has_exchange_feedback": False,
+                                    "local_feedback_path": None,
+                                    "feedback_updated": False,
+                                }
+                            ],
+                            "has_local_feedback": False,
+                            "has_exchange_feedback": False,
+                            "feedback_updated": False,
+                            "local_feedback_path": None,
+                        }
+                        for timestamp in (self.timestamp1, self.timestamp2)
+                    ],
+                },
+            ],
+        )
         assert (
             self._read_log()
             == dedent(
@@ -596,7 +763,32 @@ class TestExchangeList(TestExchange):
         self.num_submissions = 1
         self.list.coursedir.assignment_id = self.assignment_id
         self.list.inbound = True
-        self.list.start()
+        data = self.list.start()
+        self.assertEqual(
+            data,
+            [
+                {
+                    "course_id": self.course_id,
+                    "student_id": self.student_id,
+                    "assignment_id": self.assignment_id,
+                    "status": "submitted",
+                    "submissions": [
+                        {
+                            "course_id": self.course_id,
+                            "student_id": self.student_id,
+                            "assignment_id": self.assignment_id,
+                            "timestamp": self.timestamp1,
+                            "status": "submitted",
+                            "notebooks": [],
+                            "has_local_feedback": False,
+                            "has_exchange_feedback": False,
+                            "feedback_updated": False,
+                            "local_feedback_path": None,
+                        },
+                    ],
+                },
+            ],
+        )
         assert (
             self._read_log()
             == dedent(
@@ -622,7 +814,8 @@ class TestExchangeList(TestExchange):
         self.is_instructor = False
         self.list.cached = True
         self.list.coursedir.assignment_id = self.assignment_id
-        self.list.start()
+        data = self.list.start()
+        assert data == []
         assert (
             self._read_log()
             == dedent(
@@ -638,7 +831,54 @@ class TestExchangeList(TestExchange):
         self.is_instructor = False
         self.list.cached = True
         self.list.coursedir.assignment_id = self.assignment_id
-        self.list.start()
+        data = self.list.start()
+        submission_path = (
+            self.cache_dir
+            / self.course_id
+            / '{}+{}+{}'.format(
+                self.student_id,
+                self.assignment_id,
+                self.timestamp1,
+            )
+        )
+        self.assertEqual(
+            data,
+            [
+                {
+                    "course_id": self.course_id,
+                    "student_id": self.student_id,
+                    "assignment_id": self.assignment_id,
+                    "status": "submitted",
+                    "submissions": [
+                        {
+                            "course_id": self.course_id,
+                            "student_id": self.student_id,
+                            "assignment_id": self.assignment_id,
+                            "timestamp": self.timestamp1,
+                            "status": "submitted",
+                            "path": submission_path.as_posix(),
+                            "notebooks": [
+                                {
+                                    "notebook_id": self.notebook_id,
+                                    "path": (
+                                        submission_path
+                                        / (self.notebook_id + '.ipynb')
+                                    ).as_posix(),
+                                    "has_local_feedback": False,
+                                    "has_exchange_feedback": False,
+                                    "feedback_updated": False,
+                                    "local_feedback_path": None,
+                                }
+                            ],
+                            "has_local_feedback": False,
+                            "has_exchange_feedback": False,
+                            "feedback_updated": False,
+                            "local_feedback_path": None,
+                        }
+                    ],
+                },
+            ],
+        )
         assert (
             self._read_log()
             == dedent(
@@ -663,7 +903,59 @@ class TestExchangeList(TestExchange):
         self.is_instructor = False
         self.list.cached = True
         self.list.coursedir.assignment_id = self.assignment_id
-        self.list.start()
+        data = self.list.start()
+        submission_path1, submission_path2 = (
+            self.cache_dir
+            / self.course_id
+            / '{}+{}+{}'.format(
+                self.student_id,
+                self.assignment_id,
+                timestamp,
+            )
+            for timestamp in (self.timestamp1, self.timestamp2)
+        )
+        self.assertEqual(
+            data,
+            [
+                {
+                    "course_id": self.course_id,
+                    "student_id": self.student_id,
+                    "assignment_id": self.assignment_id,
+                    "status": "submitted",
+                    "submissions": [
+                        {
+                            "course_id": self.course_id,
+                            "student_id": self.student_id,
+                            "assignment_id": self.assignment_id,
+                            "timestamp": timestamp,
+                            "status": "submitted",
+                            "path": submission_path.as_posix(),
+                            "notebooks": [
+                                {
+                                    "notebook_id": self.notebook_id,
+                                    "path": (
+                                        submission_path
+                                        / (self.notebook_id + '.ipynb')
+                                    ).as_posix(),
+                                    "has_local_feedback": False,
+                                    "has_exchange_feedback": False,
+                                    "feedback_updated": False,
+                                    "local_feedback_path": None,
+                                }
+                            ],
+                            "has_local_feedback": False,
+                            "has_exchange_feedback": False,
+                            "feedback_updated": False,
+                            "local_feedback_path": None,
+                        }
+                        for timestamp, submission_path in (
+                            (self.timestamp1, submission_path1),
+                            (self.timestamp2, submission_path2),
+                        )
+                    ],
+                },
+            ],
+        )
         assert (
             self._read_log()
             == dedent(
@@ -697,7 +989,7 @@ class TestExchangeList(TestExchange):
         self.num_assignments = 1
         self.list.coursedir.course_id = self.course_id
         self.list.authenticator = DummyAuthenticator()
-        self.list.start()
+        assert self.list.start() == []
 
     def test_list_remove_cached(self):
         self._submit()
@@ -712,7 +1004,54 @@ class TestExchangeList(TestExchange):
         self._read_log()
         self.list.remove = False
         self.list.coursedir.assignment_id = '*'
-        self.list.start()
+        data = self.list.start()
+        submission_path2 = (
+            self.cache_dir
+            / self.course_id
+            / '{}+{}+{}'.format(
+                self.student_id,
+                self.assignment_id2,
+                self.timestamp2,
+            )
+        )
+        self.assertEqual(
+            data,
+            [
+                {
+                    "course_id": self.course_id,
+                    "student_id": self.student_id,
+                    "assignment_id": self.assignment_id2,
+                    "status": "submitted",
+                    "submissions": [
+                        {
+                            "course_id": self.course_id,
+                            "student_id": self.student_id,
+                            "assignment_id": self.assignment_id2,
+                            "timestamp": self.timestamp2,
+                            "status": "submitted",
+                            "path": submission_path2.as_posix(),
+                            "notebooks": [
+                                {
+                                    "notebook_id": self.notebook_id,
+                                    "path": (
+                                        submission_path2
+                                        / (self.notebook_id + '.ipynb')
+                                    ).as_posix(),
+                                    "has_local_feedback": False,
+                                    "has_exchange_feedback": False,
+                                    "feedback_updated": False,
+                                    "local_feedback_path": None,
+                                }
+                            ],
+                            "has_local_feedback": False,
+                            "has_exchange_feedback": False,
+                            "feedback_updated": False,
+                            "local_feedback_path": None,
+                        }
+                    ],
+                },
+            ],
+        )
         assert (
             self._read_log()
             == dedent(
@@ -743,7 +1082,44 @@ class TestExchangeList(TestExchange):
         self.num_feedback = 1
         self.list.inbound = True
         self.list.coursedir.assignment_id = self.assignment_id
-        self.list.start()
+        data = self.list.start()
+        self.assertEqual(
+            data,
+            [
+                {
+                    "course_id": self.course_id,
+                    "student_id": self.student_id,
+                    "assignment_id": self.assignment_id,
+                    "status": "submitted",
+                    "submissions": [
+                        {
+                            "course_id": self.course_id,
+                            "student_id": self.student_id,
+                            "assignment_id": self.assignment_id,
+                            "timestamp": timestamp,
+                            "status": "submitted",
+                            "notebooks": [
+                                {
+                                    "notebook_id": "p1",
+                                    "has_local_feedback": False,
+                                    "has_exchange_feedback": has_exchange_feedback,
+                                    "local_feedback_path": None,
+                                    "feedback_updated": False,
+                                }
+                            ],
+                            "has_local_feedback": False,
+                            "has_exchange_feedback": has_exchange_feedback,
+                            "feedback_updated": False,
+                            "local_feedback_path": None,
+                        }
+                        for (timestamp, has_exchange_feedback) in (
+                            (self.timestamp1, True),
+                            (self.timestamp2, False),
+                        )
+                    ],
+                },
+            ],
+        )
         assert (
             self._read_log()
             == dedent(
@@ -775,7 +1151,60 @@ class TestExchangeList(TestExchange):
         self._fetch_feedback(
             self.course_dir, self.course_id, self.assignment_id, self.timestamp1
         )
-        self.list.start()
+        data = self.list.start()
+        feedback_path = (
+            self.course_dir / self.assignment_id / 'feedback' / self.timestamp1
+        )
+        notebook_feedback_path = feedback_path / (self.notebook_id + '.html')
+        self.assertEqual(
+            data,
+            [
+                {
+                    "course_id": self.course_id,
+                    "student_id": self.student_id,
+                    "assignment_id": self.assignment_id,
+                    "status": "submitted",
+                    "submissions": [
+                        {
+                            "course_id": self.course_id,
+                            "student_id": self.student_id,
+                            "assignment_id": self.assignment_id,
+                            "timestamp": timestamp,
+                            "status": "submitted",
+                            "notebooks": [
+                                {
+                                    "notebook_id": "p1",
+                                    "has_local_feedback": has_local_feedback,
+                                    "has_exchange_feedback": has_exchange_feedback,
+                                    "local_feedback_path": notebook_local_feedback_path,
+                                    "feedback_updated": False,
+                                }
+                            ],
+                            "has_local_feedback": has_local_feedback,
+                            "has_exchange_feedback": has_exchange_feedback,
+                            "feedback_updated": False,
+                            "local_feedback_path": local_feedback_path,
+                        }
+                        for (
+                            timestamp,
+                            has_local_feedback,
+                            has_exchange_feedback,
+                            local_feedback_path,
+                            notebook_local_feedback_path,
+                        ) in (
+                            (
+                                self.timestamp1,
+                                True,
+                                True,
+                                feedback_path.as_posix(),
+                                notebook_feedback_path.as_posix(),
+                            ),
+                            (self.timestamp2, False, False, None, None),
+                        )
+                    ],
+                },
+            ],
+        )
         assert (
             self._read_log()
             == dedent(
@@ -807,19 +1236,67 @@ class TestExchangeList(TestExchange):
         self._fetch_feedback(
             self.course_dir, self.course_id, self.assignment_id, self.timestamp1
         )
-        feedback_path = (
-            self.course_dir
-            / self.assignment_id
-            / 'feedback'
-            / self.timestamp1
-            / (self.notebook_id + '.html')
-        )
         # This part is different from the original test because the fetched
         # feedback is modified instead of the outbound one, but the results
         # should be the same.
-        with open(feedback_path, 'a') as fetched_file:
+        feedback_path = (
+            self.course_dir / self.assignment_id / 'feedback' / self.timestamp1
+        )
+        notebook_feedback_path = feedback_path / (self.notebook_id + '.html')
+        with open(notebook_feedback_path, 'a') as fetched_file:
             fetched_file.write('blahblahblah')
-        self.list.start()
+        data = self.list.start()
+        self.assertEqual(
+            data,
+            [
+                {
+                    "course_id": self.course_id,
+                    "student_id": self.student_id,
+                    "assignment_id": self.assignment_id,
+                    "status": "submitted",
+                    "submissions": [
+                        {
+                            "course_id": self.course_id,
+                            "student_id": self.student_id,
+                            "assignment_id": self.assignment_id,
+                            "timestamp": timestamp,
+                            "status": "submitted",
+                            "notebooks": [
+                                {
+                                    "notebook_id": "p1",
+                                    "has_local_feedback": has_local_feedback,
+                                    "has_exchange_feedback": has_exchange_feedback,
+                                    "local_feedback_path": notebook_local_feedback_path,
+                                    "feedback_updated": feedback_updated,
+                                }
+                            ],
+                            "has_local_feedback": has_local_feedback,
+                            "has_exchange_feedback": has_exchange_feedback,
+                            "feedback_updated": feedback_updated,
+                            "local_feedback_path": local_feedback_path,
+                        }
+                        for (
+                            timestamp,
+                            has_local_feedback,
+                            has_exchange_feedback,
+                            feedback_updated,
+                            local_feedback_path,
+                            notebook_local_feedback_path,
+                        ) in (
+                            (
+                                self.timestamp1,
+                                True,
+                                True,
+                                True,
+                                feedback_path.as_posix(),
+                                notebook_feedback_path.as_posix(),
+                            ),
+                            (self.timestamp2, False, False, False, None, None),
+                        )
+                    ],
+                },
+            ],
+        )
         assert (
             self._read_log()
             == dedent(
@@ -852,16 +1329,64 @@ class TestExchangeList(TestExchange):
             self.course_dir, self.course_id, self.assignment_id, self.timestamp1
         )
         feedback_path = (
-            self.course_dir
-            / self.assignment_id
-            / 'feedback'
-            / self.timestamp1
-            / (self.notebook_id + '.html')
+            self.course_dir / self.assignment_id / 'feedback' / self.timestamp1
         )
-        with open(feedback_path, 'a') as fetched_file:
+        notebook_feedback_path = feedback_path / (self.notebook_id + '.html')
+        with open(notebook_feedback_path, 'a') as fetched_file:
             fetched_file.write('blahblahblah')
         self.num_feedback = 2
-        self.list.start()
+        data = self.list.start()
+        self.assertEqual(
+            data,
+            [
+                {
+                    "course_id": self.course_id,
+                    "student_id": self.student_id,
+                    "assignment_id": self.assignment_id,
+                    "status": "submitted",
+                    "submissions": [
+                        {
+                            "course_id": self.course_id,
+                            "student_id": self.student_id,
+                            "assignment_id": self.assignment_id,
+                            "timestamp": timestamp,
+                            "status": "submitted",
+                            "notebooks": [
+                                {
+                                    "notebook_id": "p1",
+                                    "has_local_feedback": has_local_feedback,
+                                    "has_exchange_feedback": has_exchange_feedback,
+                                    "local_feedback_path": notebook_local_feedback_path,
+                                    "feedback_updated": feedback_updated,
+                                }
+                            ],
+                            "has_local_feedback": has_local_feedback,
+                            "has_exchange_feedback": has_exchange_feedback,
+                            "feedback_updated": feedback_updated,
+                            "local_feedback_path": local_feedback_path,
+                        }
+                        for (
+                            timestamp,
+                            has_local_feedback,
+                            has_exchange_feedback,
+                            feedback_updated,
+                            local_feedback_path,
+                            notebook_local_feedback_path,
+                        ) in (
+                            (
+                                self.timestamp1,
+                                True,
+                                True,
+                                True,
+                                feedback_path.as_posix(),
+                                notebook_feedback_path.as_posix(),
+                            ),
+                            (self.timestamp2, False, True, False, None, None),
+                        )
+                    ],
+                },
+            ],
+        )
         assert (
             self._read_log()
             == dedent(
@@ -897,7 +1422,66 @@ class TestExchangeList(TestExchange):
             self.course_dir, self.course_id, self.assignment_id, self.timestamp2
         )
         self.num_feedback = 2
-        self.list.start()
+        data = self.list.start()
+        feedback_path1, feedback_path2 = (
+            self.course_dir / self.assignment_id / 'feedback' / timestamp
+            for timestamp in (self.timestamp1, self.timestamp2)
+        )
+        self.assertEqual(
+            data,
+            [
+                {
+                    "course_id": self.course_id,
+                    "student_id": self.student_id,
+                    "assignment_id": self.assignment_id,
+                    "status": "submitted",
+                    "submissions": [
+                        {
+                            "course_id": self.course_id,
+                            "student_id": self.student_id,
+                            "assignment_id": self.assignment_id,
+                            "timestamp": timestamp,
+                            "status": "submitted",
+                            "notebooks": [
+                                {
+                                    "notebook_id": "p1",
+                                    "has_local_feedback": has_local_feedback,
+                                    "has_exchange_feedback": has_exchange_feedback,
+                                    "local_feedback_path": (
+                                        local_feedback_path
+                                        / (self.notebook_id + '.html')
+                                    ).as_posix(),
+                                    "feedback_updated": False,
+                                }
+                            ],
+                            "has_local_feedback": has_local_feedback,
+                            "has_exchange_feedback": has_exchange_feedback,
+                            "feedback_updated": False,
+                            "local_feedback_path": local_feedback_path.as_posix(),
+                        }
+                        for (
+                            timestamp,
+                            has_local_feedback,
+                            has_exchange_feedback,
+                            local_feedback_path,
+                        ) in (
+                            (
+                                self.timestamp1,
+                                True,
+                                True,
+                                feedback_path1,
+                            ),
+                            (
+                                self.timestamp2,
+                                True,
+                                True,
+                                feedback_path2,
+                            ),
+                        )
+                    ],
+                },
+            ],
+        )
         assert (
             self._read_log()
             == dedent(
@@ -929,7 +1513,74 @@ class TestExchangeList(TestExchange):
         self.is_instructor = False
         self.list.cached = True
         self.list.coursedir.assignment_id = self.assignment_id
-        self.list.start()
+        data = self.list.start()
+        submission_path1, submission_path2 = (
+            self.cache_dir
+            / self.course_id
+            / '{}+{}+{}'.format(
+                self.student_id,
+                self.assignment_id,
+                timestamp,
+            )
+            for timestamp in (self.timestamp1, self.timestamp2)
+        )
+        self.assertEqual(
+            data,
+            [
+                {
+                    "course_id": self.course_id,
+                    "student_id": self.student_id,
+                    "assignment_id": self.assignment_id,
+                    "status": "submitted",
+                    "submissions": [
+                        {
+                            "course_id": self.course_id,
+                            "student_id": self.student_id,
+                            "assignment_id": self.assignment_id,
+                            "timestamp": timestamp,
+                            "status": "submitted",
+                            "path": submission_path.as_posix(),
+                            "notebooks": [
+                                {
+                                    "notebook_id": "p1",
+                                    "path": (
+                                        submission_path
+                                        / (self.notebook_id + '.ipynb')
+                                    ).as_posix(),
+                                    "has_local_feedback": has_local_feedback,
+                                    "has_exchange_feedback": has_exchange_feedback,
+                                    "local_feedback_path": None,
+                                    "feedback_updated": False,
+                                }
+                            ],
+                            "has_local_feedback": has_local_feedback,
+                            "has_exchange_feedback": has_exchange_feedback,
+                            "feedback_updated": False,
+                            "local_feedback_path": None,
+                        }
+                        for (
+                            timestamp,
+                            submission_path,
+                            has_local_feedback,
+                            has_exchange_feedback,
+                        ) in (
+                            (
+                                self.timestamp1,
+                                submission_path1,
+                                False,
+                                True,
+                            ),
+                            (
+                                self.timestamp2,
+                                submission_path2,
+                                False,
+                                False,
+                            ),
+                        )
+                    ],
+                },
+            ],
+        )
         assert (
             self._read_log()
             == dedent(
@@ -964,7 +1615,84 @@ class TestExchangeList(TestExchange):
         self.is_instructor = False
         self.list.cached = True
         self.list.coursedir.assignment_id = self.assignment_id
-        self.list.start()
+        data = self.list.start()
+        submission_path1, submission_path2 = (
+            self.cache_dir
+            / self.course_id
+            / '{}+{}+{}'.format(
+                self.student_id,
+                self.assignment_id,
+                timestamp,
+            )
+            for timestamp in (self.timestamp1, self.timestamp2)
+        )
+        feedback_path = (
+            self.course_dir / self.assignment_id / 'feedback' / self.timestamp1
+        )
+        notebook_feedback_path = feedback_path / (self.notebook_id + '.html')
+        self.assertEqual(
+            data,
+            [
+                {
+                    "course_id": self.course_id,
+                    "student_id": self.student_id,
+                    "assignment_id": self.assignment_id,
+                    "status": "submitted",
+                    "submissions": [
+                        {
+                            "course_id": self.course_id,
+                            "student_id": self.student_id,
+                            "assignment_id": self.assignment_id,
+                            "timestamp": timestamp,
+                            "status": "submitted",
+                            "path": submission_path.as_posix(),
+                            "notebooks": [
+                                {
+                                    "notebook_id": "p1",
+                                    "path": (
+                                        submission_path
+                                        / (self.notebook_id + '.ipynb')
+                                    ).as_posix(),
+                                    "has_local_feedback": has_local_feedback,
+                                    "has_exchange_feedback": has_exchange_feedback,
+                                    "local_feedback_path": notebook_local_feedback_path,
+                                    "feedback_updated": False,
+                                }
+                            ],
+                            "has_local_feedback": has_local_feedback,
+                            "has_exchange_feedback": has_exchange_feedback,
+                            "feedback_updated": False,
+                            "local_feedback_path": local_feedback_path,
+                        }
+                        for (
+                            timestamp,
+                            submission_path,
+                            has_local_feedback,
+                            has_exchange_feedback,
+                            local_feedback_path,
+                            notebook_local_feedback_path,
+                        ) in (
+                            (
+                                self.timestamp1,
+                                submission_path1,
+                                True,
+                                True,
+                                feedback_path.as_posix(),
+                                notebook_feedback_path.as_posix(),
+                            ),
+                            (
+                                self.timestamp2,
+                                submission_path2,
+                                False,
+                                False,
+                                None,
+                                None,
+                            ),
+                        )
+                    ],
+                },
+            ],
+        )
         assert (
             self._read_log()
             == dedent(
@@ -999,19 +1727,92 @@ class TestExchangeList(TestExchange):
         self.is_instructor = False
         self.list.cached = True
         self.list.coursedir.assignment_id = self.assignment_id
-        feedback_path = (
-            self.course_dir
-            / self.assignment_id
-            / 'feedback'
-            / self.timestamp1
-            / (self.notebook_id + '.html')
-        )
         # This part is different from the original test because the fetched
         # feedback is modified instead of the outbound one, but the results
         # should be the same.
-        with open(feedback_path, 'a') as fetched_file:
+        feedback_path = (
+            self.course_dir / self.assignment_id / 'feedback' / self.timestamp1
+        )
+        notebook_feedback_path = feedback_path / (self.notebook_id + '.html')
+        with open(notebook_feedback_path, 'a') as fetched_file:
             fetched_file.write('blahblahblah')
-        self.list.start()
+        data = self.list.start()
+        submission_path1, submission_path2 = (
+            self.cache_dir
+            / self.course_id
+            / '{}+{}+{}'.format(
+                self.student_id,
+                self.assignment_id,
+                timestamp,
+            )
+            for timestamp in (self.timestamp1, self.timestamp2)
+        )
+        self.assertEqual(
+            data,
+            [
+                {
+                    "course_id": self.course_id,
+                    "student_id": self.student_id,
+                    "assignment_id": self.assignment_id,
+                    "status": "submitted",
+                    "submissions": [
+                        {
+                            "course_id": self.course_id,
+                            "student_id": self.student_id,
+                            "assignment_id": self.assignment_id,
+                            "timestamp": timestamp,
+                            "status": "submitted",
+                            "path": submission_path.as_posix(),
+                            "notebooks": [
+                                {
+                                    "notebook_id": "p1",
+                                    "path": (
+                                        submission_path
+                                        / (self.notebook_id + '.ipynb')
+                                    ).as_posix(),
+                                    "has_local_feedback": has_local_feedback,
+                                    "has_exchange_feedback": has_exchange_feedback,
+                                    "local_feedback_path": notebook_local_feedback_path,
+                                    "feedback_updated": feedback_updated,
+                                }
+                            ],
+                            "has_local_feedback": has_local_feedback,
+                            "has_exchange_feedback": has_exchange_feedback,
+                            "feedback_updated": feedback_updated,
+                            "local_feedback_path": local_feedback_path,
+                        }
+                        for (
+                            timestamp,
+                            submission_path,
+                            has_local_feedback,
+                            has_exchange_feedback,
+                            feedback_updated,
+                            local_feedback_path,
+                            notebook_local_feedback_path,
+                        ) in (
+                            (
+                                self.timestamp1,
+                                submission_path1,
+                                True,
+                                True,
+                                True,
+                                feedback_path.as_posix(),
+                                notebook_feedback_path.as_posix(),
+                            ),
+                            (
+                                self.timestamp2,
+                                submission_path2,
+                                False,
+                                False,
+                                False,
+                                None,
+                                None,
+                            ),
+                        )
+                    ],
+                },
+            ],
+        )
         assert (
             self._read_log()
             == dedent(
@@ -1047,16 +1848,89 @@ class TestExchangeList(TestExchange):
         self.list.cached = True
         self.list.coursedir.assignment_id = self.assignment_id
         feedback_path = (
-            self.course_dir
-            / self.assignment_id
-            / 'feedback'
-            / self.timestamp1
-            / (self.notebook_id + '.html')
+            self.course_dir / self.assignment_id / 'feedback' / self.timestamp1
         )
-        with open(feedback_path, 'a') as fetched_file:
+        notebook_feedback_path = feedback_path / (self.notebook_id + '.html')
+        with open(notebook_feedback_path, 'a') as fetched_file:
             fetched_file.write('blahblahblah')
         self.num_feedback = 2
-        self.list.start()
+        data = self.list.start()
+        submission_path1, submission_path2 = (
+            self.cache_dir
+            / self.course_id
+            / '{}+{}+{}'.format(
+                self.student_id,
+                self.assignment_id,
+                timestamp,
+            )
+            for timestamp in (self.timestamp1, self.timestamp2)
+        )
+        self.assertEqual(
+            data,
+            [
+                {
+                    "course_id": self.course_id,
+                    "student_id": self.student_id,
+                    "assignment_id": self.assignment_id,
+                    "status": "submitted",
+                    "submissions": [
+                        {
+                            "course_id": self.course_id,
+                            "student_id": self.student_id,
+                            "assignment_id": self.assignment_id,
+                            "timestamp": timestamp,
+                            "status": "submitted",
+                            "path": submission_path.as_posix(),
+                            "notebooks": [
+                                {
+                                    "notebook_id": "p1",
+                                    "path": (
+                                        submission_path
+                                        / (self.notebook_id + '.ipynb')
+                                    ).as_posix(),
+                                    "has_local_feedback": has_local_feedback,
+                                    "has_exchange_feedback": has_exchange_feedback,
+                                    "local_feedback_path": notebook_local_feedback_path,
+                                    "feedback_updated": feedback_updated,
+                                }
+                            ],
+                            "has_local_feedback": has_local_feedback,
+                            "has_exchange_feedback": has_exchange_feedback,
+                            "feedback_updated": feedback_updated,
+                            "local_feedback_path": local_feedback_path,
+                        }
+                        for (
+                            timestamp,
+                            submission_path,
+                            has_local_feedback,
+                            has_exchange_feedback,
+                            feedback_updated,
+                            local_feedback_path,
+                            notebook_local_feedback_path,
+                        ) in (
+                            (
+                                self.timestamp1,
+                                submission_path1,
+                                True,
+                                True,
+                                True,
+                                feedback_path.as_posix(),
+                                notebook_feedback_path.as_posix(),
+                            ),
+                            (
+                                self.timestamp2,
+                                submission_path2,
+                                False,
+                                True,
+                                False,
+                                None,
+                                None,
+                            ),
+                        )
+                    ],
+                },
+            ],
+        )
         assert (
             self._read_log()
             == dedent(
@@ -1095,7 +1969,84 @@ class TestExchangeList(TestExchange):
         self.list.cached = True
         self.list.coursedir.assignment_id = self.assignment_id
         self.num_feedback = 2
-        self.list.start()
+        data = self.list.start()
+        submission_path1, submission_path2 = (
+            self.cache_dir
+            / self.course_id
+            / '{}+{}+{}'.format(
+                self.student_id,
+                self.assignment_id,
+                timestamp,
+            )
+            for timestamp in (self.timestamp1, self.timestamp2)
+        )
+        feedback_path1, feedback_path2 = (
+            self.course_dir / self.assignment_id / 'feedback' / timestamp
+            for timestamp in (self.timestamp1, self.timestamp2)
+        )
+        self.assertEqual(
+            data,
+            [
+                {
+                    "course_id": self.course_id,
+                    "student_id": self.student_id,
+                    "assignment_id": self.assignment_id,
+                    "status": "submitted",
+                    "submissions": [
+                        {
+                            "course_id": self.course_id,
+                            "student_id": self.student_id,
+                            "assignment_id": self.assignment_id,
+                            "timestamp": timestamp,
+                            "status": "submitted",
+                            "path": submission_path.as_posix(),
+                            "notebooks": [
+                                {
+                                    "notebook_id": "p1",
+                                    "path": (
+                                        submission_path
+                                        / (self.notebook_id + '.ipynb')
+                                    ).as_posix(),
+                                    "has_local_feedback": has_local_feedback,
+                                    "has_exchange_feedback": has_exchange_feedback,
+                                    "local_feedback_path": (
+                                        local_feedback_path
+                                        / (self.notebook_id + '.html')
+                                    ).as_posix(),
+                                    "feedback_updated": False,
+                                }
+                            ],
+                            "has_local_feedback": has_local_feedback,
+                            "has_exchange_feedback": has_exchange_feedback,
+                            "feedback_updated": False,
+                            "local_feedback_path": local_feedback_path.as_posix(),
+                        }
+                        for (
+                            timestamp,
+                            submission_path,
+                            has_local_feedback,
+                            has_exchange_feedback,
+                            local_feedback_path,
+                        ) in (
+                            (
+                                self.timestamp1,
+                                submission_path1,
+                                True,
+                                True,
+                                feedback_path1,
+                            ),
+                            (
+                                self.timestamp2,
+                                submission_path2,
+                                True,
+                                True,
+                                feedback_path2,
+                            ),
+                        )
+                    ],
+                },
+            ],
+        )
         assert (
             self._read_log()
             == dedent(

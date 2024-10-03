@@ -84,7 +84,6 @@ def check_status_code(response):
 
 
 def check_message(response):
-
     response = response.json()
     if not response['success']:
         prRed(response['message'])
@@ -461,12 +460,10 @@ def parse_args(argv):
 
 
 def main(argv=None):
-
     argv = argv or sys.argv[1:]
     args = parse_args(argv)
     args.func(args)
 
 
 if __name__ == '__main__':
-
     sys.exit(main())

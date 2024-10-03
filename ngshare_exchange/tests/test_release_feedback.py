@@ -14,7 +14,6 @@ from .. import ExchangeReleaseFeedback
 
 
 class TestExchangeReleaseFeedback(TestExchange):
-
     feedback_file = ''
     timestamp = ''
 
