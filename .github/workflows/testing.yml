@@ -1,5 +1,8 @@
 name: Run Linting and Tests
-on: [push]
+on: [push, pull_request]
+concurrency: # cancels prior builds on new commit
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   build:
     runs-on: ubuntu-latest
