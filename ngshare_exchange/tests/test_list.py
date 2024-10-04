@@ -44,6 +44,19 @@ class TestExchangeList(TestExchange, TestCase):
         shutil.copyfile(self.files_path / 'test.ipynb', notebook_path)
         pass
 
+    def _fetch_solution(
+        self, course_dir, assignment_id=TestExchange.assignment_id
+    ):
+        notebook_path = (
+            course_dir
+            / assignment_id
+            / 'solution'
+            / (self.notebook_id + '.ipynb')
+        )
+        notebook_path.parent.mkdir(parents=True)
+        shutil.copyfile(self.files_path / 'test.ipynb', notebook_path)
+        pass
+
     def _fetch_feedback(self, course_dir, course_id, assignment_id, timestamp):
         feedback_dir = course_dir / assignment_id / 'feedback' / timestamp
         feedback_dir.mkdir(parents=True)
@@ -72,6 +85,27 @@ class TestExchangeList(TestExchange, TestCase):
         return {
             'success': True,
             'assignments': assignments[: self.num_assignments],
+        }
+
+    def _get_solution(self, request: PreparedRequest, context):
+        content = self._notebook_content()
+        md5 = hashlib.md5()
+        md5.update(content)
+        checksum = md5.hexdigest()
+        files = [
+            {
+                'path': self.notebook_id + '.ipynb',
+                'content': base64.b64encode(content).decode(),
+                'checksum': checksum,
+            }
+        ]
+        return {'success': True, 'files': files}
+
+    def _get_solutions(self, request: PreparedRequest, context):
+        solutions = [self.assignment_id, self.assignment_id2]
+        return {
+            'success': True,
+            'solutions': solutions[: self.num_solutions],
         }
 
     def _get_courses(self, request: PreparedRequest, context):
@@ -190,7 +224,7 @@ class TestExchangeList(TestExchange, TestCase):
         """
         Mocks ngshare's GET courses, GET assignments, GET assignment, DELETE
         assignment, GET submissions GET student's submissions, GET submission,
-        and GET feedback.
+        GET feedback, GET solutions, GET solution.
         """
         url = '{}/courses'.format(self.base_url)
         self.requests_mocker.get(url, json=self._get_courses)
@@ -245,6 +279,26 @@ class TestExchangeList(TestExchange, TestCase):
             self.base_url, self.course_id, self.assignment_id2, self.student_id
         )
         self.requests_mocker.get(url, json=self._get_feedback)
+        url = '{}/solutions/{}'.format(self.base_url, self.course_id)
+        self.requests_mocker.get(url, json=self._get_solutions)
+        url = '{}/solutions/{}'.format(self.base_url, self.course_id2)
+        self.requests_mocker.get(url, json=self._get_solutions)
+        url = '{}/solution/{}/{}'.format(
+            self.base_url, self.course_id, self.assignment_id
+        )
+        self.requests_mocker.get(url, json=self._get_solution)
+        url = '{}/solution/{}/{}'.format(
+            self.base_url, self.course_id2, self.assignment_id
+        )
+        self.requests_mocker.get(url, json=self._get_solution)
+        url = '{}/solution/{}/{}'.format(
+            self.base_url, self.course_id, self.assignment_id2
+        )
+        self.requests_mocker.get(url, json=self._get_solution)
+        url = '{}/solution/{}/{}'.format(
+            self.base_url, self.course_id2, self.assignment_id2
+        )
+        self.requests_mocker.get(url, json=self._get_solution)
 
     def _new_list(
         self,
@@ -316,6 +370,7 @@ class TestExchangeList(TestExchange, TestCase):
         self.num_assignments = 0
         self.num_submissions = 0
         self.num_feedback = 0
+        self.num_solutions = 0
         self.is_instructor = True
 
     def test_404(self):
@@ -606,6 +661,269 @@ class TestExchangeList(TestExchange, TestCase):
             )
         )
 
+    def test_list_solution_2x1_course1(self):
+        self.num_courses = 2
+        self.num_solutions = 1
+        self.list.coursedir.course_id = self.course_id
+        self.list.solution = True
+        data = self.list.start()
+        self.assertEqual(
+            data,
+            [
+                {
+                    "course_id": self.course_id,
+                    "assignment_id": self.assignment_id,
+                    "status": "released_solution",
+                    "notebooks": [{"notebook_id": self.notebook_id}],
+                },
+            ],
+        )
+        output = self._read_log()
+        assert (
+            output
+            == dedent(
+                """
+            [INFO] Released solutions:
+            [INFO] {} {}
+            """
+            )
+            .lstrip()
+            .format(self.course_id, self.assignment_id)
+        )
+
+    def test_list_solution_2x1_course2(self):
+        self.num_courses = 2
+        self.num_solutions = 1
+        self.list.coursedir.course_id = self.course_id2
+        self.list.solution = True
+        data = self.list.start()
+        self.assertEqual(
+            data,
+            [
+                {
+                    "course_id": self.course_id2,
+                    "assignment_id": self.assignment_id,
+                    "status": "released_solution",
+                    "notebooks": [{"notebook_id": self.notebook_id}],
+                },
+            ],
+        )
+        output = self._read_log()
+        assert (
+            output
+            == dedent(
+                """
+            [INFO] Released solutions:
+            [INFO] {} {}
+            """
+            )
+            .lstrip()
+            .format(self.course_id2, self.assignment_id)
+        )
+
+    def test_list_solution_2x1(self):
+        self.num_courses = 2
+        self.num_solutions = 1
+        self.list.coursedir.course_id = '*'
+        self.list.solution = True
+        data = self.list.start()
+        self.assertEqual(
+            data,
+            [
+                {
+                    "course_id": course_id,
+                    "assignment_id": self.assignment_id,
+                    "status": "released_solution",
+                    "notebooks": [{"notebook_id": self.notebook_id}],
+                }
+                for course_id in (self.course_id, self.course_id2)
+            ],
+        )
+        output = self._read_log()
+        assert (
+            output
+            == dedent(
+                """
+            [INFO] Released solutions:
+            [INFO] {} {}
+            [INFO] {} {}
+            """
+            )
+            .lstrip()
+            .format(
+                self.course_id,
+                self.assignment_id,
+                self.course_id2,
+                self.assignment_id,
+            )
+        )
+
+    def test_list_solution_2x2_assignment1(self):
+        self.num_courses = 2
+        self.num_solutions = 2
+        self.list.coursedir.assignment_id = self.assignment_id
+        self.list.solution = True
+        data = self.list.start()
+        self.assertEqual(
+            data,
+            [
+                {
+                    "course_id": course_id,
+                    "assignment_id": self.assignment_id,
+                    "status": "released_solution",
+                    "notebooks": [{"notebook_id": self.notebook_id}],
+                }
+                for course_id in (self.course_id, self.course_id2)
+            ],
+        )
+        output = self._read_log()
+        assert (
+            output
+            == dedent(
+                """
+            [INFO] Released solutions:
+            [INFO] {} {}
+            [INFO] {} {}
+            """
+            )
+            .lstrip()
+            .format(
+                self.course_id,
+                self.assignment_id,
+                self.course_id2,
+                self.assignment_id,
+            )
+        )
+
+    def test_list_solution_2x2_assignment2(self):
+        self.num_courses = 2
+        self.num_solutions = 2
+        self.list.coursedir.assignment_id = self.assignment_id2
+        self.list.solution = True
+        data = self.list.start()
+        self.assertEqual(
+            data,
+            [
+                {
+                    "course_id": course_id,
+                    "assignment_id": self.assignment_id2,
+                    "status": "released_solution",
+                    "notebooks": [{"notebook_id": self.notebook_id}],
+                }
+                for course_id in (self.course_id, self.course_id2)
+            ],
+        )
+        output = self._read_log()
+        assert (
+            output
+            == dedent(
+                """
+            [INFO] Released solutions:
+            [INFO] {} {}
+            [INFO] {} {}
+            """
+            )
+            .lstrip()
+            .format(
+                self.course_id,
+                self.assignment_id2,
+                self.course_id2,
+                self.assignment_id2,
+            )
+        )
+
+    def test_list_solution_2x2(self):
+        self.num_courses = 2
+        self.num_solutions = 2
+        self.list.solution = True
+        data = self.list.start()
+        self.assertEqual(
+            data,
+            [
+                {
+                    "course_id": course_id,
+                    "assignment_id": assignment_id,
+                    "status": "released_solution",
+                    "notebooks": [{"notebook_id": self.notebook_id}],
+                }
+                for course_id in (self.course_id, self.course_id2)
+                for assignment_id in (self.assignment_id, self.assignment_id2)
+            ],
+        )
+        output = self._read_log()
+        assert (
+            output
+            == dedent(
+                """
+            [INFO] Released solutions:
+            [INFO] {} {}
+            [INFO] {} {}
+            [INFO] {} {}
+            [INFO] {} {}
+            """
+            )
+            .lstrip()
+            .format(
+                self.course_id,
+                self.assignment_id,
+                self.course_id,
+                self.assignment_id2,
+                self.course_id2,
+                self.assignment_id,
+                self.course_id2,
+                self.assignment_id2,
+            )
+        )
+
+    def test_list_fetched_solution(self):
+        self.num_solutions = 2
+        self._fetch_solution(self.course_dir)
+        self.list.solution = True
+        data = self.list.start()
+        solution_path = self.course_dir / self.assignment_id / "solution"
+        notebook_solution_path = solution_path / (self.notebook_id + '.ipynb')
+        self.assertEqual(
+            data,
+            [
+                {
+                    "course_id": self.course_id,
+                    "assignment_id": self.assignment_id,
+                    "status": "fetched_solution",
+                    "path": solution_path.as_posix(),
+                    "notebooks": [
+                        {
+                            "notebook_id": self.notebook_id,
+                            "path": notebook_solution_path.as_posix(),
+                        }
+                    ],
+                },
+                {
+                    "course_id": self.course_id,
+                    "assignment_id": self.assignment_id2,
+                    "status": "released_solution",
+                    "notebooks": [{"notebook_id": self.notebook_id}],
+                },
+            ],
+        )
+        output = self._read_log()
+        assert (
+            output
+            == dedent(
+                """
+            [INFO] Released solutions:
+            [INFO] {} {} (already downloaded)
+            [INFO] {} {}
+            """
+            )
+            .lstrip()
+            .format(
+                self.course_id,
+                self.assignment_id,
+                self.course_id,
+                self.assignment_id2,
+            )
+        )
+
     def test_list_remove_inbound(self):
         self.num_assignments = 2
         self.list.coursedir.assignment_id = self.assignment_id
@@ -622,6 +940,15 @@ class TestExchangeList(TestExchange, TestCase):
         self.list.start()
         assert not self.test_failed
         assert self.test_completed
+
+    def test_list_remove_solution(self):
+        self.num_assignments = 2
+        self.list.coursedir.assignment_id = self.assignment_id
+        self.list.solution = True
+        self.list.remove = True
+        self.list.start()
+        assert not self.test_failed
+        assert not self.test_completed
 
     def test_list_inbound_0(self):
         self.num_assignments = 1
