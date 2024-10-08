@@ -673,7 +673,7 @@ class TestExchangeList(TestExchange, TestCase):
                 {
                     "course_id": self.course_id,
                     "assignment_id": self.assignment_id,
-                    "status": "released_solution",
+                    "status": "fetch_assignment",
                     "notebooks": [{"notebook_id": self.notebook_id}],
                 },
             ],
@@ -684,7 +684,7 @@ class TestExchangeList(TestExchange, TestCase):
             == dedent(
                 """
             [INFO] Released solutions:
-            [INFO] {} {}
+            [INFO] {} {} (download assignment!)
             """
             )
             .lstrip()
@@ -703,7 +703,7 @@ class TestExchangeList(TestExchange, TestCase):
                 {
                     "course_id": self.course_id2,
                     "assignment_id": self.assignment_id,
-                    "status": "released_solution",
+                    "status": "fetch_assignment",
                     "notebooks": [{"notebook_id": self.notebook_id}],
                 },
             ],
@@ -714,7 +714,7 @@ class TestExchangeList(TestExchange, TestCase):
             == dedent(
                 """
             [INFO] Released solutions:
-            [INFO] {} {}
+            [INFO] {} {} (download assignment!)
             """
             )
             .lstrip()
@@ -733,7 +733,7 @@ class TestExchangeList(TestExchange, TestCase):
                 {
                     "course_id": course_id,
                     "assignment_id": self.assignment_id,
-                    "status": "released_solution",
+                    "status": "fetch_assignment",
                     "notebooks": [{"notebook_id": self.notebook_id}],
                 }
                 for course_id in (self.course_id, self.course_id2)
@@ -745,8 +745,8 @@ class TestExchangeList(TestExchange, TestCase):
             == dedent(
                 """
             [INFO] Released solutions:
-            [INFO] {} {}
-            [INFO] {} {}
+            [INFO] {} {} (download assignment!)
+            [INFO] {} {} (download assignment!)
             """
             )
             .lstrip()
@@ -770,7 +770,7 @@ class TestExchangeList(TestExchange, TestCase):
                 {
                     "course_id": course_id,
                     "assignment_id": self.assignment_id,
-                    "status": "released_solution",
+                    "status": "fetch_assignment",
                     "notebooks": [{"notebook_id": self.notebook_id}],
                 }
                 for course_id in (self.course_id, self.course_id2)
@@ -782,8 +782,8 @@ class TestExchangeList(TestExchange, TestCase):
             == dedent(
                 """
             [INFO] Released solutions:
-            [INFO] {} {}
-            [INFO] {} {}
+            [INFO] {} {} (download assignment!)
+            [INFO] {} {} (download assignment!)
             """
             )
             .lstrip()
@@ -807,7 +807,7 @@ class TestExchangeList(TestExchange, TestCase):
                 {
                     "course_id": course_id,
                     "assignment_id": self.assignment_id2,
-                    "status": "released_solution",
+                    "status": "fetch_assignment",
                     "notebooks": [{"notebook_id": self.notebook_id}],
                 }
                 for course_id in (self.course_id, self.course_id2)
@@ -819,8 +819,8 @@ class TestExchangeList(TestExchange, TestCase):
             == dedent(
                 """
             [INFO] Released solutions:
-            [INFO] {} {}
-            [INFO] {} {}
+            [INFO] {} {} (download assignment!)
+            [INFO] {} {} (download assignment!)
             """
             )
             .lstrip()
@@ -843,7 +843,7 @@ class TestExchangeList(TestExchange, TestCase):
                 {
                     "course_id": course_id,
                     "assignment_id": assignment_id,
-                    "status": "released_solution",
+                    "status": "fetch_assignment",
                     "notebooks": [{"notebook_id": self.notebook_id}],
                 }
                 for course_id in (self.course_id, self.course_id2)
@@ -856,10 +856,10 @@ class TestExchangeList(TestExchange, TestCase):
             == dedent(
                 """
             [INFO] Released solutions:
-            [INFO] {} {}
-            [INFO] {} {}
-            [INFO] {} {}
-            [INFO] {} {}
+            [INFO] {} {} (download assignment!)
+            [INFO] {} {} (download assignment!)
+            [INFO] {} {} (download assignment!)
+            [INFO] {} {} (download assignment!)
             """
             )
             .lstrip()
@@ -875,7 +875,93 @@ class TestExchangeList(TestExchange, TestCase):
             )
         )
 
+    def test_list_solution_fetched_assignment_1(self):
+        self.num_assignments = 2
+        self._fetch(self.course_dir)
+        self.num_solutions = 2
+        self.list.solution = True
+        data = self.list.start()
+        solution_path = self.course_dir / self.assignment_id / "solution"
+        notebook_solution_path = solution_path / (self.notebook_id + '.ipynb')
+        self.assertEqual(
+            data,
+            [
+                {
+                    "course_id": self.course_id,
+                    "assignment_id": self.assignment_id,
+                    "status": "released_solution",
+                    "notebooks": [{"notebook_id": self.notebook_id}],
+                },
+                {
+                    "course_id": self.course_id,
+                    "assignment_id": self.assignment_id2,
+                    "status": "fetch_assignment",
+                    "notebooks": [{"notebook_id": self.notebook_id}],
+                },
+            ],
+        )
+        output = self._read_log()
+        assert (
+            output
+            == dedent(
+                """
+            [INFO] Released solutions:
+            [INFO] {} {}
+            [INFO] {} {} (download assignment!)
+            """
+            )
+            .lstrip()
+            .format(
+                self.course_id,
+                self.assignment_id,
+                self.course_id,
+                self.assignment_id2,
+            )
+        )
+
+    def test_list_solution_fetched_assignment_2(self):
+        self.num_assignments = 2
+        self._fetch(self.course_dir)
+        self._fetch(self.course_dir, assignment_id=self.assignment_id2)
+        self.num_solutions = 2
+        self.list.solution = True
+        data = self.list.start()
+        solution_path = self.course_dir / self.assignment_id / "solution"
+        notebook_solution_path = solution_path / (self.notebook_id + '.ipynb')
+        self.assertEqual(
+            data,
+            [
+                {
+                    "course_id": self.course_id,
+                    "assignment_id": assignment_id,
+                    "status": "released_solution",
+                    "notebooks": [{"notebook_id": self.notebook_id}],
+                }
+                for assignment_id in (self.assignment_id, self.assignment_id2)
+            ],
+        )
+        output = self._read_log()
+        assert (
+            output
+            == dedent(
+                """
+            [INFO] Released solutions:
+            [INFO] {} {}
+            [INFO] {} {}
+            """
+            )
+            .lstrip()
+            .format(
+                self.course_id,
+                self.assignment_id,
+                self.course_id,
+                self.assignment_id2,
+            )
+        )
+
     def test_list_fetched_solution(self):
+        self.num_assignments = 2
+        self._fetch(self.course_dir)
         self.num_solutions = 2
         self._fetch_solution(self.course_dir)
         self.list.solution = True
@@ -900,7 +986,7 @@ class TestExchangeList(TestExchange, TestCase):
                 {
                     "course_id": self.course_id,
                     "assignment_id": self.assignment_id2,
-                    "status": "released_solution",
+                    "status": "fetch_assignment",
                     "notebooks": [{"notebook_id": self.notebook_id}],
                 },
             ],
@@ -912,7 +998,7 @@ class TestExchangeList(TestExchange, TestCase):
                 """
             [INFO] Released solutions:
             [INFO] {} {} (already downloaded)
-            [INFO] {} {}
+            [INFO] {} {} (download assignment!)
             """
             )
             .lstrip()

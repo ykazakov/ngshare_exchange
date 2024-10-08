@@ -353,8 +353,10 @@ class ExchangeList(Exchange, ABCExchangeList):
 
     def format_solution(self, info):
         msg = "{course_id} {assignment_id}".format(**info)
-        if os.path.exists(os.path.join(info['assignment_id'], 'solution')):
+        if info['status'] == "fetched_solution":
             msg += " (already downloaded)"
+        elif info['status'] == "fetch_assignment":
+            msg += " (download assignment!)"
         return msg
 
     def copy_files(self):
@@ -394,8 +396,10 @@ class ExchangeList(Exchange, ABCExchangeList):
                 if os.path.exists(solution_dir):
                     info['status'] = 'fetched_solution'
                     info['path'] = os.path.abspath(solution_dir)
-                else:
+                elif os.path.exists(assignment_dir):
                     info['status'] = 'released_solution'
+                else:
+                    info['status'] = 'fetch_assignment'
             elif os.path.exists(assignment_dir):
                 info['status'] = 'fetched'
                 info['path'] = os.path.abspath(assignment_dir)
