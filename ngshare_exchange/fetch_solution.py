@@ -28,13 +28,20 @@ class ExchangeFetchSolution(Exchange, ABCExchangeFetchSolution):
             )
         else:
             root = self.coursedir.assignment_id
+        assignment_root = os.path.join(self.assignment_dir, root)
+        if not os.path.isdir(assignment_root):
+            self.fail(
+                'Assignment "{}" was not downloaded, run `nbgrader fetch_assignment` first.'.format(
+                    self.coursedir.assignment_id
+                )
+            )
         self.dest_path = os.path.abspath(
-            os.path.join(self.assignment_dir, root, 'solution')
+            os.path.join(assignment_root, 'solution')
         )
 
-        # check if feedback folder exists
+        # check if solution folder exists
         if not os.path.exists(self.dest_path):
-            Path(self.dest_path).mkdir(parents=True)
+            Path(self.dest_path).mkdir()
 
     def do_copy(self, files):
         '''Copy the src dir to the dest dir omitting the self.coursedir.ignore globs.'''
