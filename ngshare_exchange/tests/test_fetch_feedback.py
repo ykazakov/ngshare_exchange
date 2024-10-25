@@ -32,6 +32,22 @@ class TestExchangeFetchFeedback(TestExchange):
         }
         self.requests_mocker.get(url, json=response)
 
+    def _mock_missing_feedback(self):
+        """
+        Mock's ngshare's GET feedback, with no feedback files.
+        """
+
+        url = '{}/feedback/{}/{}/{}'.format(
+            self.base_url, self.course_id, self.assignment_id, self.student_id
+        )
+
+        response = {
+            'success': True,
+            'timestamp': self.timestamp,
+            'files': [],
+        }
+        self.requests_mocker.get(url, json=response)
+
     def _mock_requests_fetch(self):
         """
         Mock's ngshare's GET feedback, which responds with the feedback file.
@@ -118,6 +134,25 @@ class TestExchangeFetchFeedback(TestExchange):
             self.fetch_feedback.start()
         except Exception as e:
             assert issubclass(type(e), ExchangeError)
+
+    def test_missing_feedback(self):
+        # set chache folder
+
+        submission_name = '{}+{}+{}'.format(
+            self.student_id, self.assignment_id, self.timestamp
+        )
+        timestamp_path = self.cache_dir / self.course_id / submission_name
+        os.makedirs(timestamp_path)
+
+        timestamp_file = timestamp_path / 'timestamp.txt'
+        with open(timestamp_file, 'w') as f:
+            f.write(self.timestamp)
+
+        self._mock_missing_feedback()
+        self.fetch_feedback.start()
+
+        feedback_dir = self.course_dir / self.assignment_id / 'feedback'
+        assert not feedback_dir.exists()
 
     def test_fetch(self):
         # set chache folder

@@ -46,16 +46,9 @@ class ExchangeFetchFeedback(Exchange, ABCExchangeFetchFeedback):
             os.path.join(self.assignment_dir, root, 'feedback')
         )
 
-        # check if feedback folder exists
-        if not os.path.exists(self.dest_path):
-            Path(self.dest_path).mkdir(parents=True)
-
     def copy_files(self):
         self.log.info('Fetching feedback from server')
-        if len(self.timestamps) == 0:
-            self.log.warning(
-                'No feedback available to fetch for your submissions'
-            )
+        available = False
 
         for timestamp in self.timestamps:
             params = {'timestamp': timestamp, 'list_only': 'false'}
@@ -68,18 +61,26 @@ class ExchangeFetchFeedback(Exchange, ABCExchangeFetchFeedback):
                 )
                 return
             try:
-                dest_with_timestamp = os.path.join(
-                    self.dest_path, str(timestamp)
-                )
-                self.decode_dir(response['files'], dest_with_timestamp)
-                self.log.info(
-                    'Successfully decoded feedback for {} saved to {}'.format(
-                        self.coursedir.assignment_id, dest_with_timestamp
+                files = response['files']
+                if files:
+                    available = True
+                    dest_with_timestamp = os.path.join(
+                        self.dest_path, str(timestamp)
                     )
-                )
+                    self.decode_dir(files, dest_with_timestamp)
+                    self.log.info(
+                        'Successfully decoded feedback for {} saved to {}'.format(
+                            self.coursedir.assignment_id, dest_with_timestamp
+                        )
+                    )
             except:
                 self.log.warning(
                     'Could not decode feedback for timestamp {}'.format(
                         str(timestamp)
                     )
                 )
+
+        if not available:
+            self.log.warning(
+                'No feedback available to fetch for your submissions'
+            )
