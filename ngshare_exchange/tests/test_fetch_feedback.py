@@ -13,6 +13,7 @@ from .. import ExchangeFetchFeedback
 
 class TestExchangeFetchFeedback(TestExchange):
     timestamp = 'some_timestamp'
+    checksum = 'some_checksum'
 
     def _mock_bad_feedback(self):
         """
@@ -101,8 +102,8 @@ class TestExchangeFetchFeedback(TestExchange):
         self._mock_requests_fetch()
 
     def test_404(self):
-        submission_name = '{}+{}+{}'.format(
-            self.student_id, self.assignment_id, self.timestamp
+        submission_name = '{}+{}+{}+{}'.format(
+            self.student_id, self.assignment_id, self.timestamp, self.checksum
         )
         timestamp_path = self.cache_dir / self.course_id / submission_name
         os.makedirs(timestamp_path)
@@ -115,8 +116,8 @@ class TestExchangeFetchFeedback(TestExchange):
         self.fetch_feedback.start()
 
     def test_unsuccessful(self):
-        submission_name = '{}+{}+{}'.format(
-            self.student_id, self.assignment_id, self.timestamp
+        submission_name = '{}+{}+{}+{}'.format(
+            self.student_id, self.assignment_id, self.timestamp, self.checksum
         )
         timestamp_path = self.cache_dir / self.course_id / submission_name
         os.makedirs(timestamp_path)
@@ -138,8 +139,8 @@ class TestExchangeFetchFeedback(TestExchange):
     def test_missing_feedback(self):
         # set chache folder
 
-        submission_name = '{}+{}+{}'.format(
-            self.student_id, self.assignment_id, self.timestamp
+        submission_name = '{}+{}+{}+{}'.format(
+            self.student_id, self.assignment_id, self.timestamp, self.checksum
         )
         timestamp_path = self.cache_dir / self.course_id / submission_name
         os.makedirs(timestamp_path)
@@ -157,8 +158,8 @@ class TestExchangeFetchFeedback(TestExchange):
     def test_fetch(self):
         # set chache folder
 
-        submission_name = '{}+{}+{}'.format(
-            self.student_id, self.assignment_id, self.timestamp
+        submission_name = '{}+{}+{}+{}'.format(
+            self.student_id, self.assignment_id, self.timestamp, self.checksum
         )
         timestamp_path = self.cache_dir / self.course_id / submission_name
         os.makedirs(timestamp_path)
@@ -184,8 +185,8 @@ class TestExchangeFetchFeedback(TestExchange):
     def test_fetch_path_includes_course(self):
         # set chache folder
 
-        submission_name = '{}+{}+{}'.format(
-            self.student_id, self.assignment_id, self.timestamp
+        submission_name = '{}+{}+{}+{}'.format(
+            self.student_id, self.assignment_id, self.timestamp, self.checksum
         )
         timestamp_path = self.cache_dir / self.course_id / submission_name
         os.makedirs(timestamp_path)
@@ -215,8 +216,8 @@ class TestExchangeFetchFeedback(TestExchange):
         timestamp2 = 'timestamp2'
 
         self.timestamp = timestamp1
-        submission_name = '{}+{}+{}'.format(
-            self.student_id, self.assignment_id, self.timestamp
+        submission_name = '{}+{}+{}+{}'.format(
+            self.student_id, self.assignment_id, self.timestamp, self.checksum
         )
         timestamp_path = self.cache_dir / self.course_id / submission_name
         os.makedirs(timestamp_path)
@@ -226,8 +227,8 @@ class TestExchangeFetchFeedback(TestExchange):
 
         self.fetch_feedback.start()
         self.timestamp = timestamp2
-        submission_name = '{}+{}+{}'.format(
-            self.student_id, self.assignment_id, self.timestamp
+        submission_name = '{}+{}+{}+{}'.format(
+            self.student_id, self.assignment_id, self.timestamp, self.checksum
         )
         timestamp_path = self.cache_dir / self.course_id / submission_name
 
@@ -257,8 +258,8 @@ class TestExchangeFetchFeedback(TestExchange):
         assert feedback_path2.is_file()
 
     def test_fetch_multiple_courses(self, tmpdir_factory):
-        submission_name = '{}+{}+{}'.format(
-            self.student_id, self.assignment_id, self.timestamp
+        submission_name = '{}+{}+{}+{}'.format(
+            self.student_id, self.assignment_id, self.timestamp, self.checksum
         )
         timestamp_path = self.cache_dir / self.course_id / submission_name
         os.makedirs(timestamp_path)
@@ -281,8 +282,8 @@ class TestExchangeFetchFeedback(TestExchange):
         os.makedirs(assignment_dir)
         self.fetch_feedback = self._new_fetch_feedback(course_id=self.course_id)
         self.timestamp = 'some_other_timestamp'
-        submission_name = '{}+{}+{}'.format(
-            self.student_id, self.assignment_id, self.timestamp
+        submission_name = '{}+{}+{}+{}'.format(
+            self.student_id, self.assignment_id, self.timestamp, self.checksum
         )
         timestamp_path = self.cache_dir / self.course_id / submission_name
         os.makedirs(timestamp_path)
@@ -305,8 +306,8 @@ class TestExchangeFetchFeedback(TestExchange):
         self.fetch_feedback.start()
 
     def test_fetch_nghsare_bad_feedback(self):
-        submission_name = '{}+{}+{}'.format(
-            self.student_id, self.assignment_id, self.timestamp
+        submission_name = '{}+{}+{}+{}'.format(
+            self.student_id, self.assignment_id, self.timestamp, self.checksum
         )
         timestamp_path = self.cache_dir / self.course_id / submission_name
         os.makedirs(timestamp_path)

@@ -106,23 +106,28 @@ class ExchangeSubmit(Exchange, ABCExchangeSubmit):
         response = self.ngshare_api_post(url, encoded_dir)
         if response is None:
             return None
-        return response['timestamp']
+        return response['timestamp'], response['checksum']
 
     def copy_files(self):
         self.log.info('Source: {}'.format(self.src_path))
 
         # copy to the real location
         self.check_filename_diff()
-        self.timestamp = self.post_submission(self.src_path)
-        if self.timestamp is None:
+        response = self.post_submission(self.src_path)
+        if response is None:
             self.log.error('Failed to submit.')
             return
+
+        self.timestamp, self.checksum = response
 
         # also copy to the cache
         cache_path = os.path.join(
             self.cache_path,
-            '{}+{}+{}'.format(
-                self.username, self.coursedir.assignment_id, self.timestamp
+            '{}+{}+{}+{}'.format(
+                self.username,
+                self.coursedir.assignment_id,
+                self.timestamp,
+                self.checksum,
             ),
         )
         if not os.path.isdir(self.cache_path):
@@ -136,5 +141,6 @@ class ExchangeSubmit(Exchange, ABCExchangeSubmit):
                 self.coursedir.course_id,
                 self.coursedir.assignment_id,
                 str(self.timestamp),
+                self.checksum,
             )
         )

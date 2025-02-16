@@ -20,7 +20,7 @@ class ExchangeFetchFeedback(Exchange, ABCExchangeFetchFeedback):
             if self.coursedir.assignment_id
             else '*'
         )
-        pattern = os.path.join(self.cache_path, '*+{}+*'.format(assignment_id))
+        pattern = os.path.join(self.cache_path, '*+{}+*+*'.format(assignment_id))
         self.log.debug(
             'Looking for submissions with pattern: {}'.format(pattern)
         )
@@ -32,7 +32,7 @@ class ExchangeFetchFeedback(Exchange, ABCExchangeFetchFeedback):
         self.timestamps = []
         submissions = [os.path.split(x)[-1] for x in glob.glob(pattern)]
         for submission in submissions:
-            (_, assignment_id, timestamp) = submission.split('/')[-1].split('+')
+            (_, assignment_id, timestamp, _) = submission.split('/')[-1].split('+')
             self.timestamps.append(timestamp)
 
     def init_dest(self):
