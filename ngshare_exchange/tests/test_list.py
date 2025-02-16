@@ -24,6 +24,8 @@ class TestExchangeList(TestExchange, TestCase):
     assignment_id2 = 'ps2'
     timestamp1 = '2000-02-03 12:34:56.789012 UTC'
     timestamp2 = '2001-02-03 12:34:56.789012 UTC'
+    checksum1 = '5a625ac6ed4e4d8cd2b5be307524682f'
+    checksum2 = '019b853bc1c10021addd47edd2d9e819'
 
     def _delete_assignment(self, request: PreparedRequest, context):
         if not self.is_instructor:
@@ -140,8 +142,16 @@ class TestExchangeList(TestExchange, TestCase):
 
     def _get_student_submissions(self, request: PreparedRequest, context):
         submissions = [
-            {'student_id': self.student_id, 'timestamp': self.timestamp1},
-            {'student_id': self.student_id, 'timestamp': self.timestamp2},
+            {
+                'student_id': self.student_id,
+                'timestamp': self.timestamp1,
+                'checksum': self.checksum1,
+            },
+            {
+                'student_id': self.student_id,
+                'timestamp': self.timestamp2,
+                'checksum': self.checksum2,
+            },
         ]
         return {
             'success': True,
@@ -336,9 +346,10 @@ class TestExchangeList(TestExchange, TestCase):
         course_id=TestExchange.course_id,
         assignment_id=TestExchange.assignment_id,
         timestamp=timestamp1,
+        checksum=checksum1,
     ):
-        assignment_filename = '{}+{}+{}'.format(
-            self.student_id, assignment_id, timestamp
+        assignment_filename = '{}+{}+{}+{}'.format(
+            self.student_id, assignment_id, timestamp, checksum
         )
         notebook_path = (
             self.cache_dir
@@ -1072,6 +1083,7 @@ class TestExchangeList(TestExchange, TestCase):
                             "student_id": self.student_id,
                             "assignment_id": self.assignment_id,
                             "timestamp": self.timestamp1,
+                            "checksum": self.checksum1,
                             "status": "submitted",
                             "notebooks": [
                                 {
@@ -1096,7 +1108,7 @@ class TestExchangeList(TestExchange, TestCase):
             == dedent(
                 """
             [INFO] Submitted assignments:
-            [INFO] {} {} {} {} (no feedback available)
+            [INFO] {} {} {} {} {} (no feedback available)
             """
             )
             .lstrip()
@@ -1105,6 +1117,7 @@ class TestExchangeList(TestExchange, TestCase):
                 self.student_id,
                 self.assignment_id,
                 self.timestamp1,
+                self.checksum1,
             )
         )
 
@@ -1128,6 +1141,7 @@ class TestExchangeList(TestExchange, TestCase):
                             "student_id": self.student_id,
                             "assignment_id": self.assignment_id,
                             "timestamp": timestamp,
+                            "checksum": checksum,
                             "status": "submitted",
                             "notebooks": [
                                 {
@@ -1143,7 +1157,10 @@ class TestExchangeList(TestExchange, TestCase):
                             "feedback_updated": False,
                             "local_feedback_path": None,
                         }
-                        for timestamp in (self.timestamp1, self.timestamp2)
+                        for timestamp, checksum in (
+                            (self.timestamp1, self.checksum1),
+                            (self.timestamp2, self.checksum2),
+                        )
                     ],
                 },
             ],
@@ -1153,8 +1170,8 @@ class TestExchangeList(TestExchange, TestCase):
             == dedent(
                 """
             [INFO] Submitted assignments:
-            [INFO] {} {} {} {} (no feedback available)
-            [INFO] {} {} {} {} (no feedback available)
+            [INFO] {} {} {} {} {} (no feedback available)
+            [INFO] {} {} {} {} {} (no feedback available)
             """
             )
             .lstrip()
@@ -1163,10 +1180,12 @@ class TestExchangeList(TestExchange, TestCase):
                 self.student_id,
                 self.assignment_id,
                 self.timestamp1,
+                self.checksum1,
                 self.course_id,
                 self.student_id,
                 self.assignment_id,
                 self.timestamp2,
+                self.checksum2,
             )
         )
 
@@ -1191,6 +1210,7 @@ class TestExchangeList(TestExchange, TestCase):
                             "student_id": self.student_id,
                             "assignment_id": self.assignment_id,
                             "timestamp": self.timestamp1,
+                            "checksum": self.checksum1,
                             "status": "submitted",
                             "notebooks": [],
                             "has_local_feedback": False,
@@ -1208,7 +1228,7 @@ class TestExchangeList(TestExchange, TestCase):
                 """
             [WARNING] No notebooks found for assignment "{}" in course "{}"
             [INFO] Submitted assignments:
-            [INFO] {} {} {} {} (no feedback available)
+            [INFO] {} {} {} {} {} (no feedback available)
             """
             )
             .lstrip()
@@ -1219,6 +1239,7 @@ class TestExchangeList(TestExchange, TestCase):
                 self.student_id,
                 self.assignment_id,
                 self.timestamp1,
+                self.checksum1,
             )
         )
 
@@ -1248,10 +1269,11 @@ class TestExchangeList(TestExchange, TestCase):
         submission_path = (
             self.cache_dir
             / self.course_id
-            / '{}+{}+{}'.format(
+            / '{}+{}+{}+{}'.format(
                 self.student_id,
                 self.assignment_id,
                 self.timestamp1,
+                self.checksum1,
             )
         )
         self.assertEqual(
@@ -1268,6 +1290,7 @@ class TestExchangeList(TestExchange, TestCase):
                             "student_id": self.student_id,
                             "assignment_id": self.assignment_id,
                             "timestamp": self.timestamp1,
+                            "checksum": self.checksum1,
                             "status": "submitted",
                             "path": submission_path.as_posix(),
                             "notebooks": [
@@ -1297,7 +1320,7 @@ class TestExchangeList(TestExchange, TestCase):
             == dedent(
                 """
             [INFO] Submitted assignments:
-            [INFO] {} {} {} {} (no feedback available)
+            [INFO] {} {} {} {} {} (no feedback available)
             """
             )
             .lstrip()
@@ -1306,13 +1329,14 @@ class TestExchangeList(TestExchange, TestCase):
                 self.student_id,
                 self.assignment_id,
                 self.timestamp1,
+                self.checksum1,
             )
         )
 
     def test_list_cached_2(self):
         self.num_assignments = 1
         self._submit()
-        self._submit(timestamp=self.timestamp2)
+        self._submit(timestamp=self.timestamp2, checksum=self.checksum2)
         self.is_instructor = False
         self.list.cached = True
         self.list.coursedir.assignment_id = self.assignment_id
@@ -1320,12 +1344,16 @@ class TestExchangeList(TestExchange, TestCase):
         submission_path1, submission_path2 = (
             self.cache_dir
             / self.course_id
-            / '{}+{}+{}'.format(
+            / '{}+{}+{}+{}'.format(
                 self.student_id,
                 self.assignment_id,
                 timestamp,
+                checksum,
             )
-            for timestamp in (self.timestamp1, self.timestamp2)
+            for timestamp, checksum in (
+                (self.timestamp1, self.checksum1),
+                (self.timestamp2, self.checksum2),
+            )
         )
         self.assertEqual(
             data,
@@ -1341,6 +1369,7 @@ class TestExchangeList(TestExchange, TestCase):
                             "student_id": self.student_id,
                             "assignment_id": self.assignment_id,
                             "timestamp": timestamp,
+                            "checksum": checksum,
                             "status": "submitted",
                             "path": submission_path.as_posix(),
                             "notebooks": [
@@ -1361,9 +1390,9 @@ class TestExchangeList(TestExchange, TestCase):
                             "feedback_updated": False,
                             "local_feedback_path": None,
                         }
-                        for timestamp, submission_path in (
-                            (self.timestamp1, submission_path1),
-                            (self.timestamp2, submission_path2),
+                        for timestamp, checksum, submission_path in (
+                            (self.timestamp1, self.checksum1, submission_path1),
+                            (self.timestamp2, self.checksum2, submission_path2),
                         )
                     ],
                 },
@@ -1374,8 +1403,8 @@ class TestExchangeList(TestExchange, TestCase):
             == dedent(
                 """
             [INFO] Submitted assignments:
-            [INFO] {} {} {} {} (no feedback available)
-            [INFO] {} {} {} {} (no feedback available)
+            [INFO] {} {} {} {} {} (no feedback available)
+            [INFO] {} {} {} {} {} (no feedback available)
             """
             )
             .lstrip()
@@ -1384,10 +1413,12 @@ class TestExchangeList(TestExchange, TestCase):
                 self.student_id,
                 self.assignment_id,
                 self.timestamp1,
+                self.checksum1,
                 self.course_id,
                 self.student_id,
                 self.assignment_id,
                 self.timestamp2,
+                self.checksum2,
             )
         )
 
@@ -1407,7 +1438,9 @@ class TestExchangeList(TestExchange, TestCase):
     def test_list_remove_cached(self):
         self._submit()
         self._submit(
-            assignment_id=self.assignment_id2, timestamp=self.timestamp2
+            assignment_id=self.assignment_id2,
+            timestamp=self.timestamp2,
+            checksum=self.checksum2,
         )
         self.is_instructor = False
         self.list.cached = True
@@ -1421,10 +1454,11 @@ class TestExchangeList(TestExchange, TestCase):
         submission_path2 = (
             self.cache_dir
             / self.course_id
-            / '{}+{}+{}'.format(
+            / '{}+{}+{}+{}'.format(
                 self.student_id,
                 self.assignment_id2,
                 self.timestamp2,
+                self.checksum2,
             )
         )
         self.assertEqual(
@@ -1441,6 +1475,7 @@ class TestExchangeList(TestExchange, TestCase):
                             "student_id": self.student_id,
                             "assignment_id": self.assignment_id2,
                             "timestamp": self.timestamp2,
+                            "checksum": self.checksum2,
                             "status": "submitted",
                             "path": submission_path2.as_posix(),
                             "notebooks": [
@@ -1470,7 +1505,7 @@ class TestExchangeList(TestExchange, TestCase):
             == dedent(
                 """
             [INFO] Submitted assignments:
-            [INFO] {} {} {} {} (no feedback available)
+            [INFO] {} {} {} {} {} (no feedback available)
             """
             )
             .lstrip()
@@ -1479,6 +1514,7 @@ class TestExchangeList(TestExchange, TestCase):
                 self.student_id,
                 self.assignment_id2,
                 self.timestamp2,
+                self.checksum2,
             )
         )
 
@@ -1510,6 +1546,7 @@ class TestExchangeList(TestExchange, TestCase):
                             "student_id": self.student_id,
                             "assignment_id": self.assignment_id,
                             "timestamp": timestamp,
+                            "checksum": checksum,
                             "status": "submitted",
                             "notebooks": [
                                 {
@@ -1525,9 +1562,9 @@ class TestExchangeList(TestExchange, TestCase):
                             "feedback_updated": False,
                             "local_feedback_path": None,
                         }
-                        for (timestamp, has_exchange_feedback) in (
-                            (self.timestamp1, True),
-                            (self.timestamp2, False),
+                        for (timestamp, checksum, has_exchange_feedback) in (
+                            (self.timestamp1, self.checksum1, True),
+                            (self.timestamp2, self.checksum2, False),
                         )
                     ],
                 },
@@ -1538,8 +1575,8 @@ class TestExchangeList(TestExchange, TestCase):
             == dedent(
                 """
             [INFO] Submitted assignments:
-            [INFO] {} {} {} {} (feedback ready to be fetched)
-            [INFO] {} {} {} {} (no feedback available)
+            [INFO] {} {} {} {} {} (feedback ready to be fetched)
+            [INFO] {} {} {} {} {} (no feedback available)
             """
             )
             .lstrip()
@@ -1548,10 +1585,12 @@ class TestExchangeList(TestExchange, TestCase):
                 self.student_id,
                 self.assignment_id,
                 self.timestamp1,
+                self.checksum1,
                 self.course_id,
                 self.student_id,
                 self.assignment_id,
                 self.timestamp2,
+                self.checksum2,
             )
         )
 
@@ -1583,6 +1622,7 @@ class TestExchangeList(TestExchange, TestCase):
                             "student_id": self.student_id,
                             "assignment_id": self.assignment_id,
                             "timestamp": timestamp,
+                            "checksum": checksum,
                             "status": "submitted",
                             "notebooks": [
                                 {
@@ -1600,6 +1640,7 @@ class TestExchangeList(TestExchange, TestCase):
                         }
                         for (
                             timestamp,
+                            checksum,
                             has_local_feedback,
                             has_exchange_feedback,
                             local_feedback_path,
@@ -1607,12 +1648,20 @@ class TestExchangeList(TestExchange, TestCase):
                         ) in (
                             (
                                 self.timestamp1,
+                                self.checksum1,
                                 True,
                                 True,
                                 feedback_path.as_posix(),
                                 notebook_feedback_path.as_posix(),
                             ),
-                            (self.timestamp2, False, False, None, None),
+                            (
+                                self.timestamp2,
+                                self.checksum2,
+                                False,
+                                False,
+                                None,
+                                None,
+                            ),
                         )
                     ],
                 },
@@ -1623,8 +1672,8 @@ class TestExchangeList(TestExchange, TestCase):
             == dedent(
                 """
             [INFO] Submitted assignments:
-            [INFO] {} {} {} {} (feedback already fetched)
-            [INFO] {} {} {} {} (no feedback available)
+            [INFO] {} {} {} {} {} (feedback already fetched)
+            [INFO] {} {} {} {} {} (no feedback available)
             """
             )
             .lstrip()
@@ -1633,10 +1682,12 @@ class TestExchangeList(TestExchange, TestCase):
                 self.student_id,
                 self.assignment_id,
                 self.timestamp1,
+                self.checksum1,
                 self.course_id,
                 self.student_id,
                 self.assignment_id,
                 self.timestamp2,
+                self.checksum2,
             )
         )
 
@@ -1673,6 +1724,7 @@ class TestExchangeList(TestExchange, TestCase):
                             "student_id": self.student_id,
                             "assignment_id": self.assignment_id,
                             "timestamp": timestamp,
+                            "checksum": checksum,
                             "status": "submitted",
                             "notebooks": [
                                 {
@@ -1690,6 +1742,7 @@ class TestExchangeList(TestExchange, TestCase):
                         }
                         for (
                             timestamp,
+                            checksum,
                             has_local_feedback,
                             has_exchange_feedback,
                             feedback_updated,
@@ -1698,13 +1751,22 @@ class TestExchangeList(TestExchange, TestCase):
                         ) in (
                             (
                                 self.timestamp1,
+                                self.checksum1,
                                 True,
                                 True,
                                 True,
                                 feedback_path.as_posix(),
                                 notebook_feedback_path.as_posix(),
                             ),
-                            (self.timestamp2, False, False, False, None, None),
+                            (
+                                self.timestamp2,
+                                self.checksum2,
+                                False,
+                                False,
+                                False,
+                                None,
+                                None,
+                            ),
                         )
                     ],
                 },
@@ -1715,8 +1777,8 @@ class TestExchangeList(TestExchange, TestCase):
             == dedent(
                 """
             [INFO] Submitted assignments:
-            [INFO] {} {} {} {} (feedback ready to be fetched)
-            [INFO] {} {} {} {} (no feedback available)
+            [INFO] {} {} {} {} {} (feedback ready to be fetched)
+            [INFO] {} {} {} {} {} (no feedback available)
             """
             )
             .lstrip()
@@ -1725,10 +1787,12 @@ class TestExchangeList(TestExchange, TestCase):
                 self.student_id,
                 self.assignment_id,
                 self.timestamp1,
+                self.checksum1,
                 self.course_id,
                 self.student_id,
                 self.assignment_id,
                 self.timestamp2,
+                self.checksum2,
             )
         )
 
@@ -1763,6 +1827,7 @@ class TestExchangeList(TestExchange, TestCase):
                             "student_id": self.student_id,
                             "assignment_id": self.assignment_id,
                             "timestamp": timestamp,
+                            "checksum": checksum,
                             "status": "submitted",
                             "notebooks": [
                                 {
@@ -1780,6 +1845,7 @@ class TestExchangeList(TestExchange, TestCase):
                         }
                         for (
                             timestamp,
+                            checksum,
                             has_local_feedback,
                             has_exchange_feedback,
                             feedback_updated,
@@ -1788,13 +1854,22 @@ class TestExchangeList(TestExchange, TestCase):
                         ) in (
                             (
                                 self.timestamp1,
+                                self.checksum1,
                                 True,
                                 True,
                                 True,
                                 feedback_path.as_posix(),
                                 notebook_feedback_path.as_posix(),
                             ),
-                            (self.timestamp2, False, True, False, None, None),
+                            (
+                                self.timestamp2,
+                                self.checksum2,
+                                False,
+                                True,
+                                False,
+                                None,
+                                None,
+                            ),
                         )
                     ],
                 },
@@ -1805,8 +1880,8 @@ class TestExchangeList(TestExchange, TestCase):
             == dedent(
                 """
             [INFO] Submitted assignments:
-            [INFO] {} {} {} {} (feedback ready to be fetched)
-            [INFO] {} {} {} {} (feedback ready to be fetched)
+            [INFO] {} {} {} {} {} (feedback ready to be fetched)
+            [INFO] {} {} {} {} {} (feedback ready to be fetched)
             """
             )
             .lstrip()
@@ -1815,10 +1890,12 @@ class TestExchangeList(TestExchange, TestCase):
                 self.student_id,
                 self.assignment_id,
                 self.timestamp1,
+                self.checksum1,
                 self.course_id,
                 self.student_id,
                 self.assignment_id,
                 self.timestamp2,
+                self.checksum2,
             )
         )
 
@@ -1854,6 +1931,7 @@ class TestExchangeList(TestExchange, TestCase):
                             "student_id": self.student_id,
                             "assignment_id": self.assignment_id,
                             "timestamp": timestamp,
+                            "checksum": checksum,
                             "status": "submitted",
                             "notebooks": [
                                 {
@@ -1874,18 +1952,21 @@ class TestExchangeList(TestExchange, TestCase):
                         }
                         for (
                             timestamp,
+                            checksum,
                             has_local_feedback,
                             has_exchange_feedback,
                             local_feedback_path,
                         ) in (
                             (
                                 self.timestamp1,
+                                self.checksum1,
                                 True,
                                 True,
                                 feedback_path1,
                             ),
                             (
                                 self.timestamp2,
+                                self.checksum2,
                                 True,
                                 True,
                                 feedback_path2,
@@ -1900,8 +1981,8 @@ class TestExchangeList(TestExchange, TestCase):
             == dedent(
                 """
             [INFO] Submitted assignments:
-            [INFO] {} {} {} {} (feedback already fetched)
-            [INFO] {} {} {} {} (feedback already fetched)
+            [INFO] {} {} {} {} {} (feedback already fetched)
+            [INFO] {} {} {} {} {} (feedback already fetched)
             """
             )
             .lstrip()
@@ -1910,10 +1991,12 @@ class TestExchangeList(TestExchange, TestCase):
                 self.student_id,
                 self.assignment_id,
                 self.timestamp1,
+                self.checksum1,
                 self.course_id,
                 self.student_id,
                 self.assignment_id,
                 self.timestamp2,
+                self.checksum2,
             )
         )
 
@@ -1922,7 +2005,7 @@ class TestExchangeList(TestExchange, TestCase):
         self.num_submissions = 2
         self.num_feedback = 1
         self._submit()
-        self._submit(timestamp=self.timestamp2)
+        self._submit(timestamp=self.timestamp2, checksum=self.checksum2)
         self.is_instructor = False
         self.list.cached = True
         self.list.coursedir.assignment_id = self.assignment_id
@@ -1930,12 +2013,16 @@ class TestExchangeList(TestExchange, TestCase):
         submission_path1, submission_path2 = (
             self.cache_dir
             / self.course_id
-            / '{}+{}+{}'.format(
+            / '{}+{}+{}+{}'.format(
                 self.student_id,
                 self.assignment_id,
                 timestamp,
+                checksum,
             )
-            for timestamp in (self.timestamp1, self.timestamp2)
+            for timestamp, checksum in (
+                (self.timestamp1, self.checksum1),
+                (self.timestamp2, self.checksum2),
+            )
         )
         self.assertEqual(
             data,
@@ -1951,6 +2038,7 @@ class TestExchangeList(TestExchange, TestCase):
                             "student_id": self.student_id,
                             "assignment_id": self.assignment_id,
                             "timestamp": timestamp,
+                            "checksum": checksum,
                             "status": "submitted",
                             "path": submission_path.as_posix(),
                             "notebooks": [
@@ -1973,18 +2061,21 @@ class TestExchangeList(TestExchange, TestCase):
                         }
                         for (
                             timestamp,
+                            checksum,
                             submission_path,
                             has_local_feedback,
                             has_exchange_feedback,
                         ) in (
                             (
                                 self.timestamp1,
+                                self.checksum1,
                                 submission_path1,
                                 False,
                                 True,
                             ),
                             (
                                 self.timestamp2,
+                                self.checksum2,
                                 submission_path2,
                                 False,
                                 False,
@@ -1999,8 +2090,8 @@ class TestExchangeList(TestExchange, TestCase):
             == dedent(
                 """
             [INFO] Submitted assignments:
-            [INFO] {} {} {} {} (feedback ready to be fetched)
-            [INFO] {} {} {} {} (no feedback available)
+            [INFO] {} {} {} {} {} (feedback ready to be fetched)
+            [INFO] {} {} {} {} {} (no feedback available)
             """
             )
             .lstrip()
@@ -2009,10 +2100,12 @@ class TestExchangeList(TestExchange, TestCase):
                 self.student_id,
                 self.assignment_id,
                 self.timestamp1,
+                self.checksum1,
                 self.course_id,
                 self.student_id,
                 self.assignment_id,
                 self.timestamp2,
+                self.checksum2,
             )
         )
 
@@ -2021,7 +2114,7 @@ class TestExchangeList(TestExchange, TestCase):
         self.num_submissions = 2
         self.num_feedback = 1
         self._submit()
-        self._submit(timestamp=self.timestamp2)
+        self._submit(timestamp=self.timestamp2, checksum=self.checksum2)
         self._fetch_feedback(
             self.course_dir, self.course_id, self.assignment_id, self.timestamp1
         )
@@ -2032,12 +2125,16 @@ class TestExchangeList(TestExchange, TestCase):
         submission_path1, submission_path2 = (
             self.cache_dir
             / self.course_id
-            / '{}+{}+{}'.format(
+            / '{}+{}+{}+{}'.format(
                 self.student_id,
                 self.assignment_id,
                 timestamp,
+                checksum,
             )
-            for timestamp in (self.timestamp1, self.timestamp2)
+            for timestamp, checksum in (
+                (self.timestamp1, self.checksum1),
+                (self.timestamp2, self.checksum2),
+            )
         )
         feedback_path = (
             self.course_dir / self.assignment_id / 'feedback' / self.timestamp1
@@ -2057,6 +2154,7 @@ class TestExchangeList(TestExchange, TestCase):
                             "student_id": self.student_id,
                             "assignment_id": self.assignment_id,
                             "timestamp": timestamp,
+                            "checksum": checksum,
                             "status": "submitted",
                             "path": submission_path.as_posix(),
                             "notebooks": [
@@ -2079,6 +2177,7 @@ class TestExchangeList(TestExchange, TestCase):
                         }
                         for (
                             timestamp,
+                            checksum,
                             submission_path,
                             has_local_feedback,
                             has_exchange_feedback,
@@ -2087,6 +2186,7 @@ class TestExchangeList(TestExchange, TestCase):
                         ) in (
                             (
                                 self.timestamp1,
+                                self.checksum1,
                                 submission_path1,
                                 True,
                                 True,
@@ -2095,6 +2195,7 @@ class TestExchangeList(TestExchange, TestCase):
                             ),
                             (
                                 self.timestamp2,
+                                self.checksum2,
                                 submission_path2,
                                 False,
                                 False,
@@ -2111,8 +2212,8 @@ class TestExchangeList(TestExchange, TestCase):
             == dedent(
                 """
             [INFO] Submitted assignments:
-            [INFO] {} {} {} {} (feedback already fetched)
-            [INFO] {} {} {} {} (no feedback available)
+            [INFO] {} {} {} {} {} (feedback already fetched)
+            [INFO] {} {} {} {} {} (no feedback available)
             """
             )
             .lstrip()
@@ -2121,10 +2222,12 @@ class TestExchangeList(TestExchange, TestCase):
                 self.student_id,
                 self.assignment_id,
                 self.timestamp1,
+                self.checksum1,
                 self.course_id,
                 self.student_id,
                 self.assignment_id,
                 self.timestamp2,
+                self.checksum2,
             )
         )
 
@@ -2133,7 +2236,7 @@ class TestExchangeList(TestExchange, TestCase):
         self.num_submissions = 2
         self.num_feedback = 1
         self._submit()
-        self._submit(timestamp=self.timestamp2)
+        self._submit(timestamp=self.timestamp2, checksum=self.checksum2)
         self._fetch_feedback(
             self.course_dir, self.course_id, self.assignment_id, self.timestamp1
         )
@@ -2153,12 +2256,16 @@ class TestExchangeList(TestExchange, TestCase):
         submission_path1, submission_path2 = (
             self.cache_dir
             / self.course_id
-            / '{}+{}+{}'.format(
+            / '{}+{}+{}+{}'.format(
                 self.student_id,
                 self.assignment_id,
                 timestamp,
+                checksum,
             )
-            for timestamp in (self.timestamp1, self.timestamp2)
+            for timestamp, checksum in (
+                (self.timestamp1, self.checksum1),
+                (self.timestamp2, self.checksum2),
+            )
         )
         self.assertEqual(
             data,
@@ -2174,6 +2281,7 @@ class TestExchangeList(TestExchange, TestCase):
                             "student_id": self.student_id,
                             "assignment_id": self.assignment_id,
                             "timestamp": timestamp,
+                            "checksum": checksum,
                             "status": "submitted",
                             "path": submission_path.as_posix(),
                             "notebooks": [
@@ -2196,6 +2304,7 @@ class TestExchangeList(TestExchange, TestCase):
                         }
                         for (
                             timestamp,
+                            checksum,
                             submission_path,
                             has_local_feedback,
                             has_exchange_feedback,
@@ -2205,6 +2314,7 @@ class TestExchangeList(TestExchange, TestCase):
                         ) in (
                             (
                                 self.timestamp1,
+                                self.checksum1,
                                 submission_path1,
                                 True,
                                 True,
@@ -2214,6 +2324,7 @@ class TestExchangeList(TestExchange, TestCase):
                             ),
                             (
                                 self.timestamp2,
+                                self.checksum2,
                                 submission_path2,
                                 False,
                                 False,
@@ -2231,8 +2342,8 @@ class TestExchangeList(TestExchange, TestCase):
             == dedent(
                 """
             [INFO] Submitted assignments:
-            [INFO] {} {} {} {} (feedback ready to be fetched)
-            [INFO] {} {} {} {} (no feedback available)
+            [INFO] {} {} {} {} {} (feedback ready to be fetched)
+            [INFO] {} {} {} {} {} (no feedback available)
             """
             )
             .lstrip()
@@ -2241,10 +2352,12 @@ class TestExchangeList(TestExchange, TestCase):
                 self.student_id,
                 self.assignment_id,
                 self.timestamp1,
+                self.checksum1,
                 self.course_id,
                 self.student_id,
                 self.assignment_id,
                 self.timestamp2,
+                self.checksum2,
             )
         )
 
@@ -2253,7 +2366,7 @@ class TestExchangeList(TestExchange, TestCase):
         self.num_submissions = 2
         self.num_feedback = 1
         self._submit()
-        self._submit(timestamp=self.timestamp2)
+        self._submit(timestamp=self.timestamp2, checksum=self.checksum2)
         self._fetch_feedback(
             self.course_dir, self.course_id, self.assignment_id, self.timestamp1
         )
@@ -2271,12 +2384,16 @@ class TestExchangeList(TestExchange, TestCase):
         submission_path1, submission_path2 = (
             self.cache_dir
             / self.course_id
-            / '{}+{}+{}'.format(
+            / '{}+{}+{}+{}'.format(
                 self.student_id,
                 self.assignment_id,
                 timestamp,
+                checksum,
             )
-            for timestamp in (self.timestamp1, self.timestamp2)
+            for timestamp, checksum in (
+                (self.timestamp1, self.checksum1),
+                (self.timestamp2, self.checksum2),
+            )
         )
         self.assertEqual(
             data,
@@ -2292,6 +2409,7 @@ class TestExchangeList(TestExchange, TestCase):
                             "student_id": self.student_id,
                             "assignment_id": self.assignment_id,
                             "timestamp": timestamp,
+                            "checksum": checksum,
                             "status": "submitted",
                             "path": submission_path.as_posix(),
                             "notebooks": [
@@ -2314,6 +2432,7 @@ class TestExchangeList(TestExchange, TestCase):
                         }
                         for (
                             timestamp,
+                            checksum,
                             submission_path,
                             has_local_feedback,
                             has_exchange_feedback,
@@ -2323,6 +2442,7 @@ class TestExchangeList(TestExchange, TestCase):
                         ) in (
                             (
                                 self.timestamp1,
+                                self.checksum1,
                                 submission_path1,
                                 True,
                                 True,
@@ -2332,6 +2452,7 @@ class TestExchangeList(TestExchange, TestCase):
                             ),
                             (
                                 self.timestamp2,
+                                self.checksum2,
                                 submission_path2,
                                 False,
                                 True,
@@ -2349,8 +2470,8 @@ class TestExchangeList(TestExchange, TestCase):
             == dedent(
                 """
             [INFO] Submitted assignments:
-            [INFO] {} {} {} {} (feedback ready to be fetched)
-            [INFO] {} {} {} {} (feedback ready to be fetched)
+            [INFO] {} {} {} {} {} (feedback ready to be fetched)
+            [INFO] {} {} {} {} {} (feedback ready to be fetched)
             """
             )
             .lstrip()
@@ -2359,10 +2480,12 @@ class TestExchangeList(TestExchange, TestCase):
                 self.student_id,
                 self.assignment_id,
                 self.timestamp1,
+                self.checksum1,
                 self.course_id,
                 self.student_id,
                 self.assignment_id,
                 self.timestamp2,
+                self.checksum2,
             )
         )
 
@@ -2371,7 +2494,7 @@ class TestExchangeList(TestExchange, TestCase):
         self.num_submissions = 2
         self.num_feedback = 1
         self._submit()
-        self._submit(timestamp=self.timestamp2)
+        self._submit(timestamp=self.timestamp2, checksum=self.checksum2)
         self._fetch_feedback(
             self.course_dir, self.course_id, self.assignment_id, self.timestamp1
         )
@@ -2386,12 +2509,16 @@ class TestExchangeList(TestExchange, TestCase):
         submission_path1, submission_path2 = (
             self.cache_dir
             / self.course_id
-            / '{}+{}+{}'.format(
+            / '{}+{}+{}+{}'.format(
                 self.student_id,
                 self.assignment_id,
                 timestamp,
+                checksum,
             )
-            for timestamp in (self.timestamp1, self.timestamp2)
+            for timestamp, checksum in (
+                (self.timestamp1, self.checksum1),
+                (self.timestamp2, self.checksum2),
+            )
         )
         feedback_path1, feedback_path2 = (
             self.course_dir / self.assignment_id / 'feedback' / timestamp
@@ -2411,6 +2538,7 @@ class TestExchangeList(TestExchange, TestCase):
                             "student_id": self.student_id,
                             "assignment_id": self.assignment_id,
                             "timestamp": timestamp,
+                            "checksum": checksum,
                             "status": "submitted",
                             "path": submission_path.as_posix(),
                             "notebooks": [
@@ -2436,6 +2564,7 @@ class TestExchangeList(TestExchange, TestCase):
                         }
                         for (
                             timestamp,
+                            checksum,
                             submission_path,
                             has_local_feedback,
                             has_exchange_feedback,
@@ -2443,6 +2572,7 @@ class TestExchangeList(TestExchange, TestCase):
                         ) in (
                             (
                                 self.timestamp1,
+                                self.checksum1,
                                 submission_path1,
                                 True,
                                 True,
@@ -2450,6 +2580,7 @@ class TestExchangeList(TestExchange, TestCase):
                             ),
                             (
                                 self.timestamp2,
+                                self.checksum2,
                                 submission_path2,
                                 True,
                                 True,
@@ -2465,8 +2596,8 @@ class TestExchangeList(TestExchange, TestCase):
             == dedent(
                 """
             [INFO] Submitted assignments:
-            [INFO] {} {} {} {} (feedback already fetched)
-            [INFO] {} {} {} {} (feedback already fetched)
+            [INFO] {} {} {} {} {} (feedback already fetched)
+            [INFO] {} {} {} {} {} (feedback already fetched)
             """
             )
             .lstrip()
@@ -2475,10 +2606,12 @@ class TestExchangeList(TestExchange, TestCase):
                 self.student_id,
                 self.assignment_id,
                 self.timestamp1,
+                self.checksum1,
                 self.course_id,
                 self.student_id,
                 self.assignment_id,
                 self.timestamp2,
+                self.checksum2,
             )
         )
 

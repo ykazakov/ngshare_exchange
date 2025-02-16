@@ -218,6 +218,7 @@ class ExchangeList(Exchange, ABCExchangeList):
                         'assignment_id': assignment_id,
                         'student_id': submission['student_id'],
                         'timestamp': submission['timestamp'],
+                        'checksum': submission['checksum'],
                         'notebooks': notebooks,
                     }
                 )
@@ -319,9 +320,10 @@ class ExchangeList(Exchange, ABCExchangeList):
                 'student_id': assignment['student_id'],
                 'assignment_id': assignment['assignment_id'],
                 'timestamp': assignment['timestamp'],
+                'checksum': assignment['checksum'],
             }
         elif self.cached:
-            regexp = r'.*/(?P<course_id>.*)/(?P<student_id>.*)\+(?P<assignment_id>.*)\+(?P<timestamp>.*)'
+            regexp = r'.*/(?P<course_id>.*)/(?P<student_id>.*)\+(?P<assignment_id>.*)\+(?P<timestamp>.*)\+(?P<checksum>.*)'
         else:
             return assignment
 
@@ -333,7 +335,7 @@ class ExchangeList(Exchange, ABCExchangeList):
         return m.groupdict()
 
     def format_inbound_assignment(self, info):
-        msg = '{course_id} {student_id} {assignment_id} {timestamp}'.format(
+        msg = '{course_id} {student_id} {assignment_id} {timestamp} {checksum}'.format(
             **info
         )
         if info['status'] == 'submitted':

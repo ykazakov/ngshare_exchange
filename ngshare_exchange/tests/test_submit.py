@@ -22,6 +22,7 @@ def get_files_path() -> Path:
 
 class TestExchangeSubmit(TestExchange):
     timestamp = 'some timestamp'
+    checksum = 'some checksum'
 
     def _mock_request_assignment(self):
         """
@@ -103,7 +104,11 @@ class TestExchangeSubmit(TestExchange):
             self.test_failed = True
             getLogger().error(e)
         self.test_completed = True
-        return {'success': True, 'timestamp': self.timestamp}
+        return {
+            'success': True,
+            'timestamp': self.timestamp,
+            'checksum': self.checksum,
+        }
 
     def _post_submission_extra(self, request: PreparedRequest, context):
         request = parse_body(request.body)
@@ -128,7 +133,11 @@ class TestExchangeSubmit(TestExchange):
             self.test_failed = True
             getLogger().error(e)
         self.test_completed = True
-        return {'success': True, 'timestamp': self.timestamp}
+        return {
+            'success': True,
+            'timestamp': self.timestamp,
+            'checksum': self.checksum,
+        }
 
     def _post_submission_size(self, request: PreparedRequest, context):
         request = parse_body(request.body)
@@ -141,7 +150,11 @@ class TestExchangeSubmit(TestExchange):
             self.test_failed = True
             getLogger().error(e)
         self.test_completed = True
-        return {'success': True, 'timestamp': self.timestamp}
+        return {
+            'success': True,
+            'timestamp': self.timestamp,
+            'checksum': self.checksum,
+        }
 
     def _prepare_submission(
         self,
